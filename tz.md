@@ -1,15 +1,12 @@
 # Выпускной проект по Go
 
-
 ## Библиотеки
 - [Сhi](https://github.com/go-chi/chi) - роутер
 - [Jwtauth](https://github.com/go-chi/jwtauth) - библиотека для работы с jwt токеном
 - [Logrus](https://github.com/sirupsen/logrus) - библиотека для работы с логами
 - [pgx](https://github.com/jackc/pgx) - библиотека для работы с бд(Postgres)
 - [golang-migrate](https://github.com/golang-migrate) - библиотека для работы с миграциями
-
-
-
+- библиотека с шифрованием (sha)
 
 ## База данных
 
@@ -17,27 +14,35 @@
 ### Таблица "users"
 
 
-| Колонка | Тип данных | Описание |
-|---------|------------|-----------|
+| Колонка | Тип данных  | Описание |
+|---------|-------------|-----------|
 | id         | INT         | Уникальный идентификатор пользователя |
-| login      | VARCHAR(50) | Имя пользователя |
-| password   | VARCHAR(100)| Пароль пользователя |
+| login      | VARCHAR(50) | Имя пользователя (Уникальное, индекс) |
+| password   | binary      | Пароль пользователя |
 | created_at | TIMESTAMP   | Дата создания пользователя |
 
+password binary
 
 ### Таблица "orders"
 
 
-| Колонка | Тип данных | Описание |
-|---------|------------|-----------|
-| id         | INT         | Уникальный идентификатор заказа |
-| user_id    | INT         | Ид пользователя |
-| number     | INT         | ID Заказа (Уникальное, индекс) |
-| accrual    | INT         | Баллы |
-| status     | VARCHAR(100)| Статус |
-| created_at | TIMESTAMP   | Дата создания пользователя |
-| created_at | TIMESTAMP   | Дата создания пользователя |
+| Колонка | Тип данных | Описание                        |
+|---------|------------|---------------------------------|
+| id         | INT        | Уникальный идентификатор заказа |
+| user_id    | INT        | Ид пользователя (индекс)        |
+| number     | INT        | ID Заказа (Уникальное, индекс)  |
+| accrual    | float OR numeric  | Баллы                           |
+| status     | ENUM       | Статус                          |
+| created_at | TIMESTAMP  | Дата создания пользователя      |
 
+accrual - float, numeric
+status - тип enum postgres 
+
+минусы:
+модель данных не проработана
+проект не расширяем
+
+go метод в хендлер - POST /api/user/orders при обращении
 
 ### Связь между таблицами
 
@@ -159,11 +164,29 @@ Authorization: Bearer token
 
 
 ## Структура проекта
-project/
-├── main.go
-├── cmd/
-├── migrations/
-└── internal/
-└── config/
-└── config.go
-└── config
+
+├── cmd  
+│   ├── accrual  
+│   │   ├── accrual_darwin_amd64  
+│   │   ├── accrual_darwin_arm64  
+│   │   ├── accrual_linux_amd64  
+│   │   └── accrual_windows_amd64  
+│   └── gophermart  
+│       ├── README.md  
+│       └── main.go  
+├── internal  
+│   ├── config  
+│   │   └── config.go  
+│   ├── migrator  
+│   ├── model  
+│   │   ├── orders  
+│   │   └── users  
+│   └── README.md  
+├── migrations  
+│   └── README.md  
+├── .gitignore  
+├── README.md  
+├── SPECIFICATION.md  
+├── go.mod  
+├── tree.md  
+└── tz.md  

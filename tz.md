@@ -5,7 +5,7 @@
 - [Jwtauth](https://github.com/go-chi/jwtauth) - библиотека для работы с jwt токеном
 - [Logrus](https://github.com/sirupsen/logrus) - библиотека для работы с логами
 - [pgx](https://github.com/jackc/pgx) - библиотека для работы с бд(Postgres)
-- [golang-migrate](https://github.com/golang-migrate) - библиотека для работы с миграциями
+- [golang-migrate](https://github.com/golang-migrate/migrate) - библиотека для работы с миграциями
 - библиотека с шифрованием (sha)
 
 ## База данных

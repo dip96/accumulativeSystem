@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: "postgres"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ../db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+      - "9090:8080"
+    networks:
+      - accumulative_system_go
+
+volumes:
+  postgres_data:
+
+networks:
+  accumulative_system_go:
+    external: true
+

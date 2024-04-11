@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 var (
@@ -19,9 +20,10 @@ type Config struct {
 	DatabaseUri          string
 	AccrualSystemAddress string
 	MigrationPath        string
+	IdleTimeout          time.Duration
 }
 
-func LoadConfig() *Config {
+func MustLoad() *Config {
 	// initConfig является синглтоном, что для конфига не является критичным, так как он инициализируется один раз
 	// и не будет больше меняться
 	initOnce.Do(func() {

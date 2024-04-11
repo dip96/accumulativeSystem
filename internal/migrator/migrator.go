@@ -17,7 +17,7 @@ func InitMigrator() {
 }
 
 func newMigrator() {
-	cnf := config.LoadConfig()
+	cnf := config.MustLoad()
 	sourceUrl := cnf.MigrationPath
 	databaseUrl := cnf.DatabaseUri
 

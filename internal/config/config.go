@@ -23,6 +23,14 @@ type Config struct {
 	IdleTimeout          time.Duration
 }
 
+type HttpServer struct {
+	//todo разбить конфиги на типы
+}
+
+type Storage struct {
+	//todo разбить конфиги на типы
+}
+
 func MustLoad() *Config {
 	// initConfig является синглтоном, что для конфига не является критичным, так как он инициализируется один раз
 	// и не будет больше меняться
@@ -30,7 +38,7 @@ func MustLoad() *Config {
 		var err error
 		instanceConfig, err = initConfig()
 
-		// Если возникла ошибка при инициализации конфигов, значит приложение не будет работать корректно
+		// Если возникла ошибка при инициализации конфигов, то приложение не будет работать корректно
 		if err != nil {
 			var configErr *configError.ConfigError
 
@@ -61,13 +69,11 @@ func initConfig() (*Config, error) {
 }
 
 func parseFlags(cfg *Config) error {
-	flag.StringVar(&cfg.RunAddress, "a", "localhost:8080", "address and port to run server")
-	flag.StringVar(&cfg.DatabaseUri, "d", fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "postgres"), "")
+	//flag.StringVar(&cfg.RunAddress, "a", "localhost:8080", "address and port to run server")
+	flag.StringVar(&cfg.RunAddress, "a", "0.0.0.0:8080", "address and port to run server")
+	flag.StringVar(&cfg.DatabaseUri, "d", fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "postgres"), "")
 	flag.StringVar(&cfg.AccrualSystemAddress, "r", "", "File to save metrics")
 	flag.StringVar(&cfg.MigrationPath, "m", "file:./migrations", "")
-
-	//flag.StringVar(&cfg.RunAddress, "a", "0.0.0.0:8080", "address and port to run server")
-	//flag.StringVar(&cfg.DatabaseUri, "d", fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "metrics"), "")
 
 	flag.Parse()
 	return nil

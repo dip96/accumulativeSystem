@@ -24,12 +24,18 @@ type Config struct {
 }
 
 type HttpServer struct {
-	//todo разбить конфиги на типы
+	//TODO разбить конфиги на типы
 }
 
 type Storage struct {
-	//todo разбить конфиги на типы
+	//TODO разбить конфиги на типы
 }
+
+const (
+	EnvLocal = "local"
+	EnvTest  = "test"
+	EnvProd  = "prod"
+)
 
 func MustLoad() *Config {
 	// initConfig является синглтоном, что для конфига не является критичным, так как он инициализируется один раз

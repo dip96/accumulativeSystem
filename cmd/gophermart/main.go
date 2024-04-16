@@ -2,11 +2,13 @@ package main
 
 import (
 	"accumulativeSystem/internal/config"
+	handLogin "accumulativeSystem/internal/http-server/handlers/user/login"
 	handRegistration "accumulativeSystem/internal/http-server/handlers/user/registration"
 	"accumulativeSystem/internal/migrator"
 	"accumulativeSystem/internal/storage/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth"
 	"net/http"
 	"time"
 )
@@ -23,6 +25,9 @@ func main() {
 	//TODO init storage
 	storage := postgres.NewDb()
 
+	//TODO jwt init
+	jwtAuth := jwtauth.New("HS512", []byte("secret"), nil)
+
 	//TODO router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -31,7 +36,8 @@ func main() {
 
 	//r.Group()
 
-	r.Post("/api/user/register", handRegistration.New(storage))
+	r.Post("/api/user/register", handRegistration.New(storage, jwtAuth))
+	r.Post("/api/user/login", handLogin.New(storage, jwtAuth))
 
 	srv := &http.Server{
 		Addr:    cnf.RunAddress,

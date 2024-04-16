@@ -1,7 +1,7 @@
 package storage
 
-import "accumulativeSystem/internal/model/user"
-import "accumulativeSystem/internal/model/order"
+import "accumulativeSystem/internal/models/user"
+import "accumulativeSystem/internal/models/order"
 
 type StorageUserInterface interface {
 	CreateUser(user user.User) error

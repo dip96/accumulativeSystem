@@ -4,6 +4,7 @@ import (
 	"accumulativeSystem/internal/errors/postgres"
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
@@ -18,10 +19,10 @@ func NewPoolWrapper(pool *pgxpool.Pool) *PoolWrapper {
 	return &PoolWrapper{pool: pool}
 }
 
-func (pw *PoolWrapper) Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
+func (pw *PoolWrapper) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	retryDelays := []time.Duration{1 * time.Second, 1 * time.Second, 1 * time.Second}
 	for attempt, delay := range retryDelays {
-		tag, err := pw.pool.Exec(ctx, sql, arguments...)
+		tag, err := pw.pool.Exec(ctx, sql, args...)
 
 		if err != nil {
 			var pgErr *pgconn.PgError
@@ -40,4 +41,13 @@ func (pw *PoolWrapper) Exec(ctx context.Context, sql string, arguments ...any) (
 	}
 
 	return pgconn.CommandTag{}, nil
+}
+
+func (pw *PoolWrapper) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
+	row := pw.pool.QueryRow(ctx, sql, args...)
+	return row
+}
+
+func (pw *PoolWrapper) Begin(ctx context.Context) (pgx.Tx, error) {
+	return pw.pool.Begin(ctx)
 }

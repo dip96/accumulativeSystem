@@ -2,14 +2,14 @@ package registration
 
 import (
 	errPostgres "accumulativeSystem/internal/errors/postgres"
-	"accumulativeSystem/internal/lib/api/response"
 	"accumulativeSystem/internal/lib/hash"
-	userModel "accumulativeSystem/internal/model/user"
+	//serviceUser "accumulativeSystem/internal/service/user"
 	storage "accumulativeSystem/internal/storage/postgres"
 	"errors"
-	_ "github.com/go-chi/jwtauth"
+	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 	"net/http"
+	"time"
 )
 
 type Request struct {
@@ -17,30 +17,21 @@ type Request struct {
 	Password string `json:"password"`
 }
 
-type Response struct {
-	response.Response
-}
-
-func New(postgres *storage.Postgres) http.HandlerFunc {
+func New(postgres *storage.Postgres, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := &userModel.User{}
+		//TODO другой способ
+		var req Request
+		err := render.DecodeJSON(r.Body, &req)
 
-		// Связываем данные запроса с моделью User
-		if err := render.Bind(r, user); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		hashPassword, err := hash.HashPassword(user.Password)
-
+		//TODO стоит ли в хендлере оставить это условие. Возможно стоит перенести в другой слой
+		hashPassword, err := hash.HashPassword(req.Password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		//END TODO
 
-		user.HashPassword = hashPassword
-
-		err = postgres.CreateUser(user)
+		user, err := postgres.CreateUser(req.Login, hashPassword)
 
 		//TODO стоит ли в хендлере оставить это условие. Возможно стоит перенести в другой слой
 		if err != nil {
@@ -50,7 +41,20 @@ func New(postgres *storage.Postgres) http.HandlerFunc {
 			} else {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
+
+			return
+		}
+		//END TODO
+
+		_, tokenString, err := jwtAuth.Encode(map[string]interface{}{
+			"user_id": user.Id,
+			"exp":     time.Now().Add(time.Hour * 24).Unix(), // действителен в течение 24 часов
+		})
+
+		if err != nil {
+			//TODO Нужно ли удалять пользователя? Или попросить сделать реавторизацию?
 		}
 
+		w.Header().Set("Authorization", "Bearer "+tokenString)
 	}
 }

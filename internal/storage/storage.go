@@ -1,10 +1,14 @@
 package storage
 
-import "accumulativeSystem/internal/models/user"
-import "accumulativeSystem/internal/models/order"
+import (
+	"accumulativeSystem/internal/models/order"
+	userModel "accumulativeSystem/internal/models/user"
+)
 
 type StorageUserInterface interface {
-	CreateUser(user user.User) error
+	CreateUser(login string, password []byte) (*userModel.User, error)
+	GetUser(login string) (*userModel.User, error)
+	GetUserPassword(login string) (*userModel.User, error)
 }
 
 type StorageOrderInterface interface {

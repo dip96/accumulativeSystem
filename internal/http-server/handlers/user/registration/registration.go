@@ -3,7 +3,7 @@ package registration
 import (
 	errPostgres "accumulativeSystem/internal/errors/postgres"
 	"accumulativeSystem/internal/lib/hash"
-	//serviceUser "accumulativeSystem/internal/service/user"
+	//serviceUser "accumulativeSystem/internal/service/user" //TODO добавить отдельный слой service, прослойка между контроллерами и моделями
 	storage "accumulativeSystem/internal/storage/postgres"
 	"errors"
 	"github.com/go-chi/jwtauth"
@@ -55,6 +55,6 @@ func New(postgres *storage.Postgres, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc 
 			//TODO Нужно ли удалять пользователя? Или попросить сделать реавторизацию?
 		}
 
-		w.Header().Set("Authorization", "Bearer "+tokenString)
+		w.Header().Set("Authorization", tokenString)
 	}
 }

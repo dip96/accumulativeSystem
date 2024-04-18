@@ -52,7 +52,7 @@ func New(postgres *storage.Postgres, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		w.Header().Set("Authorization", "Bearer "+tokenString)
+		w.Header().Set("Authorization", tokenString)
 	}
 }
 

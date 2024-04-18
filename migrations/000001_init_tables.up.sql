@@ -11,8 +11,8 @@ create type order_status as enum ('NEW', 'REGISTERED', 'PROCESSING', 'INVALID', 
 
 CREATE TABLE IF NOT EXISTS orders (
      id serial PRIMARY KEY,
-     user_id serial,
-     order_id serial UNIQUE,
+     user_id int,
+     order_id bigint UNIQUE,
      accrual numeric,
      status order_status,
      created_at TIMESTAMP NOT NULL DEFAULT NOW(),

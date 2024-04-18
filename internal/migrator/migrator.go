@@ -31,7 +31,7 @@ func newMigrator() {
 
 	if err := instanceMigrate.Up(); err != nil {
 		if errors.As(err, &migrate.ErrNoChange) {
-			return
+			return //TODO добавить ошибку
 		}
 
 		//возвращаем панику, в случаи проблемы с применением миграции

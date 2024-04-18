@@ -2,8 +2,10 @@ package main
 
 import (
 	"accumulativeSystem/internal/config"
+	handCreateOrder "accumulativeSystem/internal/http-server/handlers/order/createOrder"
 	handLogin "accumulativeSystem/internal/http-server/handlers/user/login"
 	handRegistration "accumulativeSystem/internal/http-server/handlers/user/registration"
+	authMid "accumulativeSystem/internal/http-server/middleware/auth"
 	"accumulativeSystem/internal/logger"
 	"accumulativeSystem/internal/migrator"
 	"accumulativeSystem/internal/storage/postgres"
@@ -38,11 +40,22 @@ func main() {
 	//TODO router
 	logger.Log.Info("init router")
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
+	r.Use(middleware.RequestID) //TODO добавить RequestID в Log.WithField()
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	r.Post("/api/user/register", handRegistration.New(storage, jwtAuth))
-	r.Post("/api/user/login", handLogin.New(storage, jwtAuth))
+	// Protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier(jwtAuth))
+		r.Use(authMid.AuthMiddleware)
+
+		r.Post("/api/user/orders", handCreateOrder.New(storage))
+	})
+
+	// Public routes
+	r.Group(func(r chi.Router) {
+		r.Post("/api/user/register", handRegistration.New(storage, jwtAuth))
+		r.Post("/api/user/login", handLogin.New(storage, jwtAuth))
+	})
 
 	srv := &http.Server{
 		Addr:    cnf.RunAddress,

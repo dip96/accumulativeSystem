@@ -3,6 +3,7 @@ package registration
 import (
 	errPostgres "accumulativeSystem/internal/errors/postgres"
 	"accumulativeSystem/internal/lib/hash"
+	balance2 "accumulativeSystem/internal/models/balance"
 	//serviceUser "accumulativeSystem/internal/service/user" //TODO добавить отдельный слой service, прослойка между контроллерами и моделями
 	storage "accumulativeSystem/internal/storage/postgres"
 	"errors"
@@ -45,6 +46,15 @@ func New(postgres *storage.Postgres, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc 
 			return
 		}
 		//END TODO
+
+		var balance balance2.UserBalance
+		balance.UserID = user.Id
+		_, err = postgres.CreateBalance(&balance)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		_, tokenString, err := jwtAuth.Encode(map[string]interface{}{
 			"user_id": user.Id,

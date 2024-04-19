@@ -1,6 +1,7 @@
 package storage
 
 import (
+	balanceModel "accumulativeSystem/internal/models/balance"
 	"accumulativeSystem/internal/models/order"
 	userModel "accumulativeSystem/internal/models/user"
 )
@@ -19,7 +20,13 @@ type StorageOrderInterface interface {
 	GetOrderByUserId(userId int) (order.Order, error)
 }
 
+type StorageBalanceInterface interface {
+	CreateBalance(balance *balanceModel.UserBalance) (*balanceModel.UserBalance, error)
+	GetBalanceByUserId(userID int) (*balanceModel.UserBalance, error)
+}
+
 type StorageInterface interface {
 	StorageUserInterface
 	StorageOrderInterface
+	StorageBalanceInterface
 }

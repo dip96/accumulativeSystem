@@ -2,6 +2,7 @@ package main
 
 import (
 	"accumulativeSystem/internal/config"
+	handBalance "accumulativeSystem/internal/http-server/handlers/balance/getBalance"
 	handCreateOrder "accumulativeSystem/internal/http-server/handlers/order/createOrder"
 	handGetOrder "accumulativeSystem/internal/http-server/handlers/order/getOrders"
 	handLogin "accumulativeSystem/internal/http-server/handlers/user/login"
@@ -51,6 +52,7 @@ func main() {
 
 		r.Post("/api/user/orders", handCreateOrder.New(storage))
 		r.Get("/api/user/orders", handGetOrder.New(storage))
+		r.Get("/api/user/balance", handBalance.New(storage))
 	})
 
 	// Public routes

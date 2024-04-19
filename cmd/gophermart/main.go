@@ -3,6 +3,7 @@ package main
 import (
 	"accumulativeSystem/internal/config"
 	handCreateOrder "accumulativeSystem/internal/http-server/handlers/order/createOrder"
+	handGetOrder "accumulativeSystem/internal/http-server/handlers/order/getOrders"
 	handLogin "accumulativeSystem/internal/http-server/handlers/user/login"
 	handRegistration "accumulativeSystem/internal/http-server/handlers/user/registration"
 	authMid "accumulativeSystem/internal/http-server/middleware/auth"
@@ -49,6 +50,7 @@ func main() {
 		r.Use(authMid.AuthMiddleware)
 
 		r.Post("/api/user/orders", handCreateOrder.New(storage))
+		r.Get("/api/user/orders", handGetOrder.New(storage))
 	})
 
 	// Public routes

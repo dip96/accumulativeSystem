@@ -60,6 +60,36 @@ func (s *Postgres) GetOrderByOrderId(orderId int) (*orderModel.Order, error) {
 	return &order, nil
 }
 
+func (s *Postgres) GetOrdersByUserId(userId int) ([]*orderModel.Order, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	sqlSelect := "SELECT id, user_id, order_id, accrual, status, created_at FROM orders WHERE user_id = $1 ORDER BY created_at ASC"
+
+	rows, err := s.Pool.Query(ctx, sqlSelect, userId)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*orderModel.Order
+	for rows.Next() {
+		order := &orderModel.Order{}
+		err = rows.Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.Status, &order.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
 func (s *Postgres) GetOrderByOrderIdAndUserID(orderId int, userId float64) (*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

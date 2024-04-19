@@ -8,6 +8,7 @@ import (
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//TODo в случаи удаления пользователя токен корректно отрабатывает
 		token, claims, err := jwtauth.FromContext(r.Context())
 		if err != nil || token == nil {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)

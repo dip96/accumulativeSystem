@@ -44,7 +44,7 @@ func New(postgres *storage.Postgres) http.HandlerFunc {
 		}
 
 		existingOrder, err := postgres.GetOrderByOrderId(orderIDInt)
-		if existingOrder.UserId != userId {
+		if existingOrder != nil && existingOrder.UserId != userId {
 			http.Error(w, "Order already exists for another user", http.StatusConflict)
 			return
 		}
@@ -57,9 +57,10 @@ func New(postgres *storage.Postgres) http.HandlerFunc {
 		postgres.CreateOrder(userID, orderIDInt)
 		//order, err := postgres.CreateOrder(userID, orderIDInt)
 
-		if err != nil {
-			http.Error(w, "Error order", http.StatusInternalServerError)
-		}
+		//if err != nil {
+		//	http.Error(w, "Error order", http.StatusInternalServerError)
+		//	return
+		//}
 
 		w.WriteHeader(http.StatusAccepted)
 	}

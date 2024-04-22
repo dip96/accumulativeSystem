@@ -5,24 +5,59 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var Log *logrus.Logger
+type Logger interface {
+	Debug(args ...interface{})
+	Debugf(format string, args ...interface{})
+	Info(args ...interface{})
+	Infof(format string, args ...interface{})
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+}
 
-func Init(env string) {
-	Log = logrus.New()
-	Log.SetFormatter(&logrus.TextFormatter{
+type logger struct {
+	log *logrus.Logger
+}
+
+func Init(env string) Logger {
+	l := logrus.New()
+	l.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
+
 	switch env {
 	case config.EnvLocal:
-		Log.SetLevel(logrus.DebugLevel)
+		l.SetLevel(logrus.DebugLevel)
 	case config.EnvTest:
-		Log.SetLevel(logrus.DebugLevel)
+		l.SetLevel(logrus.DebugLevel)
 	case config.EnvProd:
-		Log.SetLevel(logrus.InfoLevel)
+		l.SetLevel(logrus.InfoLevel)
 	default:
 		panic("no stand specified")
 	}
 
-	//logEntry := Log.WithField("test1", "test")
-	//Log = logEntry.Logger
+	return &logger{log: l}
+}
+
+func (l *logger) Debug(args ...interface{}) {
+	l.log.Debug(args...)
+}
+
+func (l *logger) Debugf(format string, args ...interface{}) {
+	l.log.Debugf(format, args...)
+}
+
+func (l *logger) Info(args ...interface{}) {
+	l.log.Info(args...)
+}
+
+func (l *logger) Infof(format string, args ...interface{}) {
+	l.log.Infof(format, args...)
+}
+
+func (l *logger) Error(args ...interface{}) {
+	l.log.Error(args...)
+}
+
+func (l *logger) Errorf(format string, args ...interface{}) {
+	l.log.Errorf(format, args...)
 }

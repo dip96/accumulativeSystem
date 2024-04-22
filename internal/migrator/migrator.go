@@ -6,35 +6,36 @@ import (
 	_ "accumulativeSystem/internal/migrator/drivers" //инициализация нужных драйверов
 	"errors"
 	"github.com/golang-migrate/migrate/v4"
-	"sync"
 )
 
-var once sync.Once
-
-func InitMigrator() {
-	once.Do(func() {
-		newMigrator()
-	})
+type Migrator interface {
+	Up() error
 }
 
-func newMigrator() {
-	cnf := config.MustLoad()
-	sourceUrl := cnf.MigrationPath
-	databaseUrl := cnf.DatabaseUri
+type migrator struct {
+	instance *migrate.Migrate
+}
+
+func NewMigrator(cnf config.ConfigInstance) (Migrator, error) {
+	sourceUrl := cnf.GetMigrationPath()
+	databaseUrl := cnf.GetDatabaseURI()
 
 	instanceMigrate, err := migrate.New(sourceUrl, databaseUrl)
-
 	if err != nil {
-		//возвращаем панику, в случаи проблемы с инициализацией миграции
-		panic(migratorError.New("error during migration", err))
+		return nil, migratorError.New("error during migration", err)
 	}
 
-	if err := instanceMigrate.Up(); err != nil {
+	return &migrator{instance: instanceMigrate}, nil
+}
+
+func (m *migrator) Up() error {
+	if err := m.instance.Up(); err != nil {
 		if errors.As(err, &migrate.ErrNoChange) {
-			return //TODO добавить ошибку
+			// изменений нет, можно выходить
+			return nil
 		}
-
-		//возвращаем панику, в случаи проблемы с применением миграции
-		panic(migratorError.New("error during up migration", err))
+		return migratorError.New("error during up migration", err)
 	}
+
+	return nil
 }

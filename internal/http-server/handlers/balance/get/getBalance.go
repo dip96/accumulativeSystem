@@ -1,8 +1,7 @@
-package getBalance
+package get
 
 import (
-	//serviceUser "accumulativeSystem/internal/service/user" //TODO добавить отдельный слой service, прослойка между контроллерами и моделями
-	storage "accumulativeSystem/internal/storage/postgres"
+	balanceService "accumulativeSystem/internal/services/balance"
 	"encoding/json"
 	"net/http"
 )
@@ -12,7 +11,7 @@ type BalanceResponse struct {
 	WithdrawnBalance float64 `json:"withdrawn"`
 }
 
-func New(postgres *storage.Postgres) http.HandlerFunc {
+func New(service balanceService.BalanceService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.Context().Value("user_id")
 
@@ -20,14 +19,14 @@ func New(postgres *storage.Postgres) http.HandlerFunc {
 			http.Error(w, "Not user id", http.StatusInternalServerError)
 		}
 
-		userID, ok := userId.(float64)
+		userID, ok := userId.(int)
 
 		if !ok {
 			http.Error(w, "Error userID", http.StatusInternalServerError)
 			return
 		}
 
-		balance, err := postgres.GetUserBalance((int(userID)))
+		balance, err := service.GetUserBalance(userID)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

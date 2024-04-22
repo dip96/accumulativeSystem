@@ -5,9 +5,9 @@ import (
 )
 
 type Order struct {
-	Id        int64            `json:"id"`
-	UserId    float64          `json:"user_id"` //TODO почему здесь float64?
-	OrderId   int64            `json:"order_id"`
+	Id        int              `json:"id"`
+	UserId    int              `json:"user_id"` //TODO почему здесь float64?
+	OrderId   int              `json:"order_id"`
 	Accrual   float64          `json:"accrual"`
 	Status    OrderStatus      `json:"status"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`

@@ -1,7 +1,7 @@
 package createOrder
 
 import (
-	storage "accumulativeSystem/internal/storage/postgres"
+	orderService "accumulativeSystem/internal/services/order"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -12,13 +12,13 @@ type Request struct {
 }
 
 type OrderResponse struct {
-	Number     int64     `json:"number"`
+	Number     int       `json:"number"`
 	Status     string    `json:"status"`
 	Accrual    float64   `json:"accrual"`
 	UploadedAt time.Time `json:"uploaded_at"`
 }
 
-func New(postgres *storage.Postgres) http.HandlerFunc {
+func New(service orderService.OrderService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.Context().Value("user_id")
 
@@ -33,7 +33,7 @@ func New(postgres *storage.Postgres) http.HandlerFunc {
 			return
 		}
 
-		orders, err := postgres.GetOrdersByUserId(int(userID))
+		orders, err := service.GetOrdersByUserId(int(userID))
 		if len(orders) == 0 {
 			http.Error(w, "", http.StatusNoContent)
 			return

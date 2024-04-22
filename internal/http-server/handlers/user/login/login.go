@@ -1,12 +1,8 @@
 package registration
 
 import (
-	"accumulativeSystem/internal/lib/hash"
-	userModel "accumulativeSystem/internal/models/user"
-	"golang.org/x/crypto/bcrypt"
-
-	//serviceUser "accumulativeSystem/internal/service/user"
-	storage "accumulativeSystem/internal/storage/postgres"
+	"accumulativeSystem/internal/lib/auth"
+	userService "accumulativeSystem/internal/services/user"
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 	"net/http"
@@ -18,25 +14,20 @@ type Request struct {
 	Password string `json:"password"`
 }
 
-func New(postgres *storage.Postgres, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc {
+func New(userService userService.UserService, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//TODO другой способ
 		var req Request
 		err := render.DecodeJSON(r.Body, &req)
 
-		user, err := postgres.GetUserPassword(req.Login)
+		user, err := userService.GetUserWithPassword(req.Login)
 
 		if err != nil {
-			//Ошибки - no rows in result set
-			//Ошибки - context deadline exceeded
-
-			//TODO возможно ошибка свянная с бд, а не с отсутствующим логином
-			//http.Error(w, err.Error(), http.StatusInternalServerError)
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		err = Authenticate(user, req.Password)
+		err = auth.Authenticate(user, req.Password)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -54,20 +45,4 @@ func New(postgres *storage.Postgres, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc 
 
 		w.Header().Set("Authorization", tokenString)
 	}
-}
-
-func Authenticate(user *userModel.User, password string) error {
-	//TODO стоит ли в хендлере оставить это условие. Возможно стоит перенести в другой слой
-	hashPassword, err := hash.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	//END TODO
-
-	// Сравнить хэш пароля из базы данных с хэшем пароля, полученным в запросе
-	if err := bcrypt.CompareHashAndPassword(hashPassword, []byte(password)); err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -1,32 +1,18 @@
 package storage
 
 import (
-	balanceModel "accumulativeSystem/internal/models/balance"
-	"accumulativeSystem/internal/models/order"
-	userModel "accumulativeSystem/internal/models/user"
+	"context"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type StorageUserInterface interface {
-	CreateUser(login string, password []byte) (*userModel.User, error)
-	GetUser(login string) (*userModel.User, error)
-	GetUserPassword(login string) (*userModel.User, error)
-}
-
-type StorageOrderInterface interface {
-	CreateOrder(user order.Order) error
-	UpdateOrder(order.Order) error
-	GetOrderById(id int) (order.Order, error)
-	GetOrderByOrderId(orderId int) (order.Order, error)
-	GetOrderByUserId(userId int) (order.Order, error)
-}
-
-type StorageBalanceInterface interface {
-	CreateBalance(balance *balanceModel.UserBalance) (*balanceModel.UserBalance, error)
-	GetBalanceByUserId(userID int) (*balanceModel.UserBalance, error)
-}
-
-type StorageInterface interface {
-	StorageUserInterface
-	StorageOrderInterface
-	StorageBalanceInterface
+// Storage - интерфейс для взаимодействия с бд
+type Storage interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Acquire(ctx context.Context) (*pgxpool.Conn, error)
+	Close()
 }

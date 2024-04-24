@@ -51,14 +51,14 @@ func (s *orderService) CreateOrder(order *orderModel.Order) (*orderModel.Order, 
 		return nil, apiError.NewError(http.StatusOK, "order already exists", nil)
 	}
 
-	err = s.repo.CreateOrder(ctx, order)
+	err = s.repo.CreateOrder(ctx, nil, order)
 
 	//TODO добавить ошибку
 	if err != nil {
 		return nil, err
 	}
 
-	order, err = s.repo.GetOrderByOrderId(ctx, order.OrderId)
+	order, err = s.repo.GetOrderByOrderId(ctx, nil, order.OrderId)
 
 	if err != nil {
 		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
@@ -70,14 +70,14 @@ func (s *orderService) CreateOrder(order *orderModel.Order) (*orderModel.Order, 
 func (s *orderService) GetOrderByOrderId(orderId int) (*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return s.repo.GetOrderByOrderId(ctx, orderId)
+	return s.repo.GetOrderByOrderId(ctx, nil, orderId)
 }
 
 func (s *orderService) GetOrdersByUserId(userId int) ([]*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	orders, err := s.repo.GetOrdersByUserId(ctx, userId)
+	orders, err := s.repo.GetOrdersByUserId(ctx, nil, userId)
 
 	if err != nil {
 		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
@@ -93,7 +93,7 @@ func (s *orderService) GetOrdersByUserId(userId int) ([]*orderModel.Order, error
 func (s *orderService) GetOrderByOrderIdAndUserID(orderId int, userId float64) (*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return s.repo.GetOrderByOrderIdAndUserID(ctx, orderId, userId)
+	return s.repo.GetOrderByOrderIdAndUserID(ctx, nil, orderId, userId)
 }
 
 // TODO перенести в lib???

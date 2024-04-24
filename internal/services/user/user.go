@@ -1,12 +1,16 @@
 package user
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	"accumulativeSystem/internal/lib/hash"
 	balanceModel "accumulativeSystem/internal/models/balance"
 	userModel "accumulativeSystem/internal/models/user"
 	"accumulativeSystem/internal/repositories/balance"
 	userRepository "accumulativeSystem/internal/repositories/user"
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5/pgconn"
+	"net/http"
 	"time"
 )
 
@@ -20,8 +24,8 @@ type userService struct {
 	repoBalance balance.BalanceRepository
 }
 
-func NewUserService(repo userRepository.UserRepository) UserService {
-	return &userService{repo: repo}
+func NewUserService(repo userRepository.UserRepository, balance balance.BalanceRepository) UserService {
+	return &userService{repo: repo, repoBalance: balance}
 }
 
 func (s *userService) CreateUser(login, password string) (*userModel.User, error) {
@@ -34,29 +38,48 @@ func (s *userService) CreateUser(login, password string) (*userModel.User, error
 		return nil, err
 	}
 
-	//TODO добавить транзакцию
-	// Создаем пользователя в рамках транзакции
-	user, err := s.repo.CreateUser(ctx, login, hashPassword)
+	// Начинаем транзакцию
+	tx, err := s.repo.Begin(ctx)
 	if err != nil {
-		return nil, err
+		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
-	//TODO добавить корректные ошибки с возможность их идентификации в хендлере
-	//if err != nil {
-	//	var postgresErr *errPostgres.PostgresError
-	//	if errors.As(err, &postgresErr) {
-	//		http.Error(w, postgresErr.Error(), http.StatusConflict)
-	//	} else {
-	//		http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	}
-	//
-	//	return
-	//}
-	//END TODO
+	defer func() {
+		//TODO интересный момент в случаи паники, err == nil
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			err = tx.Commit(ctx)
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	//TODO добавить транзакцию Создаем пользователя в рамках транзакции
+	err = s.repo.CreateUser(ctx, tx, login, hashPassword)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return nil, apiError.NewError(http.StatusConflict, "duplicate login", pgErr)
+			}
+		}
+		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+	}
+
+	user, err := s.repo.GetUser(ctx, tx, login)
+
+	if err != nil {
+		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+	}
 
 	var uBalance balanceModel.UserBalance
 	uBalance.UserID = user.Id
-	_, err = s.repoBalance.CreateBalance(ctx, &uBalance)
+	uBalance.Balance = 0
+	uBalance.WithdrawnBalance = 0
+
+	err = s.repoBalance.CreateBalance(ctx, tx, &uBalance)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +91,7 @@ func (s *userService) CreateUser(login, password string) (*userModel.User, error
 func (s *userService) GetUser(login string) (*userModel.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return s.repo.GetUser(ctx, login)
+	return s.repo.GetUser(ctx, nil, login)
 }
 
 func (s *userService) GetUserWithPassword(login string) (*userModel.User, error) {
@@ -78,5 +101,5 @@ func (s *userService) GetUserWithPassword(login string) (*userModel.User, error)
 	//Ошибки - no rows in result set
 	//Ошибки - context deadline exceeded
 
-	return s.repo.GetUserWithPassword(ctx, login)
+	return s.repo.GetUserWithPassword(ctx, nil, login)
 }

@@ -6,7 +6,7 @@ import (
 
 type Order struct {
 	Id        int              `json:"id"`
-	UserId    int              `json:"user_id"` //TODO почему здесь float64?
+	UserId    int              `json:"user_id"`
 	OrderId   int              `json:"order_id"`
 	Accrual   float64          `json:"accrual"`
 	Status    OrderStatus      `json:"status"`

@@ -12,3 +12,7 @@ func New(text string, err error) error {
 func (e *PostgresError) Error() string {
 	return e.msg
 }
+
+func (e *PostgresError) Unwrap() error {
+	return e.error
+}

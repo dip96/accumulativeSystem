@@ -3,27 +3,46 @@ package auth
 import (
 	"context"
 	"github.com/go-chi/jwtauth"
+	"github.com/lestrrat-go/jwx/jwt"
 	"net/http"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//TODo в случаи удаления пользователя токен корректно отрабатывает
-		token, claims, err := jwtauth.FromContext(r.Context())
-		if err != nil || token == nil {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
+		tokenStr := jwtauth.TokenFromHeader(r)
+		if tokenStr == "" {
+			http.Error(w, "Missing token", http.StatusUnauthorized)
 			return
 		}
 
-		if claims == nil {
-			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		token, err := jwt.Parse([]byte(tokenStr))
+
+		if err != nil {
+			http.Error(w, "error token", http.StatusUnauthorized)
 			return
 		}
 
-		//TODO добавить проверку на актуальность токена
-		//expDate := claims["exp"]
+		mapValue, err := token.AsMap(r.Context())
 
-		ctx := context.WithValue(r.Context(), "user_id", claims["user_id"])
+		if err != nil {
+			http.Error(w, "error token", http.StatusUnauthorized)
+			return
+		}
+
+		if mapValue == nil {
+			http.Error(w, "error token", http.StatusUnauthorized)
+		}
+
+		//TODO добавить проверку на актуальность токена по времени
+		//expTime, ok := mapValue["exp"].(float64)
+		//if !ok {
+		//	http.Error(w, "Invalid token expiration", http.StatusUnauthorized)
+		//	return
+		//}
+
+		userId := int(mapValue["user_id"].(float64))
+		ctx := context.WithValue(r.Context(), "user_id", userId)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -1,10 +1,13 @@
 package order
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	orderModel "accumulativeSystem/internal/models/order"
 	orderRepository "accumulativeSystem/internal/repositories/order"
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -29,16 +32,23 @@ func (s *orderService) CreateOrder(order *orderModel.Order) (*orderModel.Order, 
 	defer cancel()
 
 	if !isValidLunaChecksum(order.OrderId) {
-		return nil, errors.New("not valid card number")
+		return nil, apiError.NewError(http.StatusUnprocessableEntity, "not valid card number", nil)
 	}
 
 	existingOrder, err := s.GetOrderByOrderId(order.OrderId)
-	if existingOrder != nil && existingOrder.UserId != order.UserId {
-		return nil, errors.New("order already exists for another user")
+
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		}
 	}
 
-	if err == nil && existingOrder != nil {
-		return nil, errors.New("order already exists")
+	if existingOrder != nil && existingOrder.UserId != order.UserId {
+		return nil, apiError.NewError(http.StatusConflict, "order already exists for another user", nil)
+	}
+
+	if existingOrder != nil {
+		return nil, apiError.NewError(http.StatusOK, "order already exists", nil)
 	}
 
 	err = s.repo.CreateOrder(ctx, order)
@@ -51,7 +61,7 @@ func (s *orderService) CreateOrder(order *orderModel.Order) (*orderModel.Order, 
 	order, err = s.repo.GetOrderByOrderId(ctx, order.OrderId)
 
 	if err != nil {
-		return nil, err
+		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	return order, nil
@@ -66,7 +76,18 @@ func (s *orderService) GetOrderByOrderId(orderId int) (*orderModel.Order, error)
 func (s *orderService) GetOrdersByUserId(userId int) ([]*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return s.repo.GetOrdersByUserId(ctx, userId)
+
+	orders, err := s.repo.GetOrdersByUserId(ctx, userId)
+
+	if err != nil {
+		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+	}
+
+	if len(orders) == 0 {
+		return nil, apiError.NewError(http.StatusNoContent, "Internal Server Error", err)
+	}
+
+	return orders, nil
 }
 
 func (s *orderService) GetOrderByOrderIdAndUserID(orderId int, userId float64) (*orderModel.Order, error) {

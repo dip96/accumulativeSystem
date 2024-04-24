@@ -1,8 +1,9 @@
 package registration
 
 import (
-	//serviceUser "accumulativeSystem/internal/service/user" //TODO добавить отдельный слой service, прослойка между контроллерами и моделями
+	apiError "accumulativeSystem/internal/errors/api"
 	userService "accumulativeSystem/internal/services/user"
+	"errors"
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 	"net/http"
@@ -16,11 +17,20 @@ type Request struct {
 
 func New(userService userService.UserService, jwtAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//TODO другой способ
 		var req Request
 		err := render.DecodeJSON(r.Body, &req)
 
 		user, err := userService.CreateUser(req.Login, req.Password)
+
+		if err != nil {
+			var customErr *apiError.ApiError
+			if errors.As(err, &customErr) {
+				http.Error(w, customErr.Error(), customErr.Code)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		_, tokenString, err := jwtAuth.Encode(map[string]interface{}{
 			"user_id": user.Id,
@@ -29,8 +39,10 @@ func New(userService userService.UserService, jwtAuth *jwtauth.JWTAuth) http.Han
 
 		if err != nil {
 			//TODO Нужно ли удалять пользователя? Или попросить сделать реавторизацию?
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
+		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Authorization", tokenString)
 	}
 }

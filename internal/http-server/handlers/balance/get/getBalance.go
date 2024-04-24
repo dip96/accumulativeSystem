@@ -1,8 +1,10 @@
 package get
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	balanceService "accumulativeSystem/internal/services/balance"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -23,12 +25,16 @@ func New(service balanceService.BalanceService) http.HandlerFunc {
 
 		if !ok {
 			http.Error(w, "Error userID", http.StatusInternalServerError)
-			return
 		}
 
 		balance, err := service.GetUserBalance(userID)
 
 		if err != nil {
+			var customErr *apiError.ApiError
+			if errors.As(err, &customErr) {
+				http.Error(w, customErr.Error(), customErr.Code)
+				return
+			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

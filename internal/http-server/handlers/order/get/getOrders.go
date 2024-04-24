@@ -1,8 +1,10 @@
 package createOrder
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	orderService "accumulativeSystem/internal/services/order"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 )
@@ -26,21 +28,20 @@ func New(service orderService.OrderService) http.HandlerFunc {
 			http.Error(w, "Not user id", http.StatusInternalServerError)
 		}
 
-		userID, ok := userId.(float64)
-
+		userID, ok := userId.(int)
 		if !ok {
 			http.Error(w, "Error userID", http.StatusInternalServerError)
-			return
 		}
 
-		orders, err := service.GetOrdersByUserId(int(userID))
-		if len(orders) == 0 {
-			http.Error(w, "", http.StatusNoContent)
-			return
-		}
+		orders, err := service.GetOrdersByUserId(userID)
 
 		if err != nil {
-			http.Error(w, "Order already exists", http.StatusInternalServerError)
+			var customErr *apiError.ApiError
+			if errors.As(err, &customErr) {
+				http.Error(w, customErr.Error(), customErr.Code)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

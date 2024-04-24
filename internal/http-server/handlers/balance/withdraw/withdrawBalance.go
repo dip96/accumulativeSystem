@@ -1,7 +1,9 @@
 package withdraw
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	balanceService "accumulativeSystem/internal/services/balance"
+	"errors"
 	"github.com/go-chi/render"
 	"net/http"
 	"strconv"
@@ -44,13 +46,16 @@ func New(service balanceService.BalanceService) http.HandlerFunc {
 
 		err = service.WithdrawBalance(int(userID), orderIDInt, req.Sum)
 
-		if err.Error() == "insufficient funds" {
-			http.Error(w, "there are insufficient funds in the account", http.StatusPaymentRequired)
+		if err != nil {
+			var customErr *apiError.ApiError
+			if errors.As(err, &customErr) {
+				http.Error(w, customErr.Error(), customErr.Code)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if err != nil {
-			http.Error(w, "Error", http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusOK)
 	}
 }

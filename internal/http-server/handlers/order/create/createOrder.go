@@ -1,8 +1,10 @@
 package create
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	orderModel "accumulativeSystem/internal/models/order"
 	orderService "accumulativeSystem/internal/services/order"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -39,7 +41,12 @@ func New(service orderService.OrderService) http.HandlerFunc {
 		_, err = service.CreateOrder(&order)
 
 		if err != nil {
-			http.Error(w, "Error order", http.StatusInternalServerError)
+			var customErr *apiError.ApiError
+			if errors.As(err, &customErr) {
+				http.Error(w, customErr.Error(), customErr.Code)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

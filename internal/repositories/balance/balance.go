@@ -2,15 +2,15 @@ package balance
 
 import (
 	balanceModel "accumulativeSystem/internal/models/balance"
-	storage "accumulativeSystem/internal/storage/postgres"
+	"accumulativeSystem/internal/storage"
 	"context"
 	"github.com/jackc/pgx/v5"
 )
 
 type BalanceRepository interface {
-	CreateBalance(ctx context.Context, balance *balanceModel.UserBalance) (*balanceModel.UserBalance, error)
-	GetUserBalance(ctx context.Context, userID int) (*balanceModel.UserBalance, error)
-	UpdateUserBalance(ctx context.Context, balance *balanceModel.UserBalance) error
+	CreateBalance(ctx context.Context, tx pgx.Tx, balance *balanceModel.UserBalance) error
+	GetUserBalance(ctx context.Context, tx pgx.Tx, userID int) (*balanceModel.UserBalance, error)
+	UpdateUserBalance(ctx context.Context, tx pgx.Tx, balance *balanceModel.UserBalance) error
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
@@ -22,32 +22,31 @@ func NewBalanceRepository(storage storage.Storage) BalanceRepository {
 	return &balanceRepository{db: storage}
 }
 
-func (r *balanceRepository) CreateBalance(ctx context.Context, balance *balanceModel.UserBalance) (*balanceModel.UserBalance, error) {
+func (r *balanceRepository) CreateBalance(ctx context.Context, tx pgx.Tx, balance *balanceModel.UserBalance) error {
 	sqlQuery := "INSERT INTO user_balances (user_id, balance, withdrawn_balance) VALUES ($1,$2,$3)"
 
-	_, err := r.db.Exec(ctx, sqlQuery,
-		balance.UserID,
-		balance.Balance,
-		balance.WithdrawnBalance,
-	)
-
-	if err != nil {
-		return nil, err
+	if tx == nil {
+		_, err := r.db.Exec(ctx, sqlQuery, balance.UserID, balance.Balance, balance.WithdrawnBalance)
+		return err
 	}
 
-	userBalance, err := r.GetUserBalance(ctx, balance.UserID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return userBalance, nil
+	_, err := tx.Exec(ctx, sqlQuery, balance.UserID, balance.Balance, balance.WithdrawnBalance)
+	return err
 }
 
-func (r *balanceRepository) GetUserBalance(ctx context.Context, userID int) (*balanceModel.UserBalance, error) {
+func (r *balanceRepository) GetUserBalance(ctx context.Context, tx pgx.Tx, userID int) (*balanceModel.UserBalance, error) {
 	sqlSelect := "SELECT id, user_id, balance, withdrawn_balance FROM user_balances WHERE user_id = $1"
 	var userBalance balanceModel.UserBalance
-	err := r.db.QueryRow(ctx, sqlSelect, userID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
+
+	if tx == nil {
+		err := r.db.QueryRow(ctx, sqlSelect, userID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
+		if err != nil {
+			return nil, err
+		}
+		return &userBalance, nil
+	}
+
+	err := tx.QueryRow(ctx, sqlSelect, userID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
 	if err != nil {
 		return nil, err
 	}
@@ -55,15 +54,16 @@ func (r *balanceRepository) GetUserBalance(ctx context.Context, userID int) (*ba
 	return &userBalance, nil
 }
 
-func (r *balanceRepository) UpdateUserBalance(ctx context.Context, balance *balanceModel.UserBalance) error {
+func (r *balanceRepository) UpdateUserBalance(ctx context.Context, tx pgx.Tx, balance *balanceModel.UserBalance) error {
 	sqlUpdate := "UPDATE user_balances SET balance = $1, withdrawn_balance = $2 WHERE user_id = $3"
 
-	_, err := r.db.Exec(ctx, sqlUpdate, balance.Balance, balance.WithdrawnBalance, balance.UserID)
-	if err != nil {
+	if tx == nil {
+		_, err := r.db.Exec(ctx, sqlUpdate, balance.Balance, balance.WithdrawnBalance, balance.UserID)
 		return err
 	}
 
-	return nil
+	_, err := tx.Exec(ctx, sqlUpdate, balance.Balance, balance.WithdrawnBalance, balance.UserID)
+	return err
 }
 
 func (r *balanceRepository) Begin(ctx context.Context) (pgx.Tx, error) {

@@ -17,7 +17,7 @@ import (
 	balanceService "accumulativeSystem/internal/services/balance"
 	orderService "accumulativeSystem/internal/services/order"
 	userService "accumulativeSystem/internal/services/user"
-	storage "accumulativeSystem/internal/storage/postgres"
+	"accumulativeSystem/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth"
@@ -52,9 +52,11 @@ func NewApp(cfg config.ConfigInstance, storage storage.Storage, log logger.Logge
 	balanceRepo := balanceRepository.NewBalanceRepository(storage)
 
 	// Создаем сервис пользователей
-	usService := userService.NewUserService(userRepo)
+	usService := userService.NewUserService(userRepo, balanceRepo)
 	orService := orderService.NewOrderService(orderRepo)
-	baService := balanceService.NewBalanceService(balanceRepo)
+	baService := balanceService.NewBalanceService(balanceRepo, orderRepo)
+
+	//TODO добавить логер в роуты, сервисы, репозитории
 
 	// Инициализация роута и хэндлеров
 	//TODO добавить отдельный контейнер для хранения всех сервисов
@@ -76,7 +78,7 @@ func (app *App) initRouter(userService userService.UserService, orderService ord
 
 	// Настройка защищенных маршрутов
 	app.Router.Group(func(r chi.Router) {
-		r.Use(authMid.JWTVerifier(app.JWTAuth))
+		//r.Use(authMid.JWTVerifier(app.JWTAuth))
 		r.Use(authMid.AuthMiddleware)
 
 		r.Post("/api/user/orders", handCreateOrder.New(orderService))

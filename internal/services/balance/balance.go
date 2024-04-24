@@ -1,12 +1,16 @@
 package balance
 
 import (
+	apiError "accumulativeSystem/internal/errors/api"
 	balanceModel "accumulativeSystem/internal/models/balance"
 	orderModel "accumulativeSystem/internal/models/order"
 	balanceRepository "accumulativeSystem/internal/repositories/balance"
 	"accumulativeSystem/internal/repositories/order"
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5"
+	"github.com/shopspring/decimal"
+	"net/http"
 	"time"
 )
 
@@ -22,15 +26,21 @@ type balanceService struct {
 	repoOrder order.OrderRepository
 }
 
-func NewBalanceService(repo balanceRepository.BalanceRepository) BalanceService {
-	return &balanceService{repo: repo}
+func NewBalanceService(repo balanceRepository.BalanceRepository, repoOrder order.OrderRepository) BalanceService {
+	return &balanceService{repo: repo, repoOrder: repoOrder}
 }
 
 func (s *balanceService) CreateBalance(balance *balanceModel.UserBalance) (*balanceModel.UserBalance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	usBalance, err := s.repo.CreateBalance(ctx, balance)
+	err := s.repo.CreateBalance(ctx, nil, balance)
+
+	usBalance, err := s.repo.GetUserBalance(ctx, nil, balance.UserID)
+
+	if err != nil {
+		return nil, err
+	}
 
 	//TODO добавить ошибку
 	if err != nil {
@@ -43,47 +53,78 @@ func (s *balanceService) CreateBalance(balance *balanceModel.UserBalance) (*bala
 func (s *balanceService) GetUserBalance(userID int) (*balanceModel.UserBalance, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return s.repo.GetUserBalance(ctx, userID)
+
+	balance, err := s.repo.GetUserBalance(ctx, nil, userID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apiError.NewError(http.StatusInternalServerError, "no balance information", err)
+		}
+	}
+
+	return balance, nil
 }
 
 func (s *balanceService) UpdateUserBalance(balance *balanceModel.UserBalance) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return s.repo.UpdateUserBalance(ctx, balance)
+	return s.repo.UpdateUserBalance(ctx, nil, balance)
 }
 
 func (s *balanceService) WithdrawBalance(userID int, orderID int, sum float64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	//TODO ТРАНЗАКЦИЯ
+	sumDecimal := decimal.NewFromFloat(sum)
 
-	userBalance, err := s.repo.GetUserBalance(ctx, userID)
+	// Начинаем транзакцию
+	tx, err := s.repo.Begin(ctx)
+	if err != nil {
+		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+	}
+
+	defer func() {
+		//TODO интересный момент в случаи паники, err == nil
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			err = tx.Commit(ctx)
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	userBalance, err := s.repo.GetUserBalance(ctx, tx, userID)
+	userBalanceDecimal := decimal.NewFromFloat(userBalance.Balance)
 
 	if err != nil {
-		return err
+		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	//Проверяем, достаточно ли средств
-	if userBalance.Balance < sum {
-		return errors.New("insufficient funds") //TODO добавить кастомную ошибку
+	if userBalanceDecimal.LessThan(sumDecimal) {
+		return apiError.NewError(http.StatusPaymentRequired, "insufficient funds", nil)
 	}
 
 	// Создаем новый заказ
 	var order orderModel.Order
 	order.OrderId = orderID
 	order.UserId = userID
-	err = s.repoOrder.CreateOrder(ctx, &order)
+	err = s.repoOrder.CreateOrder(ctx, tx, &order)
 	if err != nil {
-		return err
+		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	// Обновляем баланс пользователя
-	userBalance.Balance -= sum
-	userBalance.WithdrawnBalance += sum
-	err = s.repo.UpdateUserBalance(ctx, userBalance)
+	newBalance := userBalanceDecimal.Sub(sumDecimal)
+	newWithdrawnBalance := decimal.NewFromFloat(userBalance.WithdrawnBalance).Add(sumDecimal)
+
+	userBalance.Balance, _ = newBalance.Float64()
+	userBalance.WithdrawnBalance, _ = newWithdrawnBalance.Float64()
+	err = s.repo.UpdateUserBalance(ctx, tx, userBalance)
 	if err != nil {
-		return err
+		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	return nil

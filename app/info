@@ -1,0 +1,11 @@
+Запуск accural:
+./cmd/accrual/accrual_linux_amd64 -a=localhost:8081 -d="postgresql://postgres:postgres@postgres/postgres?sslmode=disable"
+
+
+//https://hurl.dev/ - тестирование
+//конфигурация линтера golangci-lint
+//написание docker файла для go приложений
+
+
+go get github.com/golang-migrate/migrate/v4
+go get github.com/go-chi/chi/v5

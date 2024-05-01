@@ -40,15 +40,23 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 	go func() {
 		client := &http.Client{}
 		orChan := s.orderChan.GetOrderChan()
-		defer close(orChan)
+		channelClosed := false
+
+		defer func() {
+			if !channelClosed {
+				close(orChan)
+			}
+		}()
 
 		for orderID := range orChan {
 			select {
-			case <-orChan:
-				break
+			case _, ok := <-orChan:
+				if !ok {
+					channelClosed = true
+					break
+				}
 			default:
 				order, err := service.GetOrderByOrderID(orderID)
-
 				if err != nil {
 					log.Printf("Problem searching for an order - %s", err.Error())
 					continue
@@ -90,6 +98,10 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 				if err != nil {
 					log.Printf("Error saving order: %v", err)
 				}
+			}
+
+			if channelClosed {
+				break
 			}
 		}
 	}()

@@ -43,47 +43,53 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 		defer close(orChan)
 
 		for orderID := range orChan {
-			order, err := service.GetOrderByOrderID(orderID)
-			if err != nil {
-				log.Printf("Problem searching for an order - %s", err.Error())
-				continue
-			}
+			select {
+			case <-orChan:
+				break
+			default:
+				order, err := service.GetOrderByOrderID(orderID)
 
-			url := s.urlAccrual + strconv.Itoa(orderID)
+				if err != nil {
+					log.Printf("Problem searching for an order - %s", err.Error())
+					continue
+				}
 
-			req, err := http.NewRequest("GET", url, nil)
-			if err != nil {
-				log.Printf("Error creating request: %v", err)
-				continue
-			}
+				url := s.urlAccrual + strconv.Itoa(orderID)
 
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Printf("Error sending request: %v", err)
-				continue
-			}
-			defer resp.Body.Close()
+				req, err := http.NewRequest("GET", url, nil)
+				if err != nil {
+					log.Printf("Error creating request: %v", err)
+					continue
+				}
 
-			if resp.StatusCode != http.StatusOK {
-				log.Printf("Error: Received status code %d, method: %s", resp.StatusCode, url)
-				continue
-			}
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Printf("Error sending request: %v", err)
+					continue
+				}
+				defer resp.Body.Close()
 
-			var orderRes orderResponse
+				if resp.StatusCode != http.StatusOK {
+					log.Printf("Error: Received status code %d, method: %s", resp.StatusCode, url)
+					continue
+				}
 
-			err = json.NewDecoder(resp.Body).Decode(&orderRes)
-			if err != nil {
-				log.Printf("Error decoding response: %v", err)
-				continue
-			}
+				var orderRes orderResponse
 
-			order.Status = orderModel.GetOrderStatusByValue(orderRes.Status)
-			order.Accrual = orderRes.Accrual
+				err = json.NewDecoder(resp.Body).Decode(&orderRes)
+				if err != nil {
+					log.Printf("Error decoding response: %v", err)
+					continue
+				}
 
-			err = s.usBalance.AccrualBalance(order.UserID, order, order.Accrual)
+				order.Status = orderModel.GetOrderStatusByValue(orderRes.Status)
+				order.Accrual = orderRes.Accrual
 
-			if err != nil {
-				log.Printf("Error saving order: %v", err)
+				err = s.usBalance.AccrualBalance(order.UserID, order, order.Accrual)
+
+				if err != nil {
+					log.Printf("Error saving order: %v", err)
+				}
 			}
 		}
 	}()

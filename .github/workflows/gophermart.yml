@@ -52,6 +52,7 @@ jobs:
 
       - name: Test
         run: |
+          ls -la ./
           gophermarttest \
             -test.v -test.run=^TestGophermart$ \
             -gophermart-binary-path=app/cmd/gophermart/gophermart \

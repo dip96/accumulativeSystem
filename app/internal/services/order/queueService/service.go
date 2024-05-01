@@ -41,6 +41,10 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 		client := &http.Client{}
 		for orderID := range s.orderChan.GetOrderChan() {
 
+			if _, ok := <-s.orderChan.GetOrderChan(); !ok {
+				break
+			}
+
 			order, err := service.GetOrderByOrderID(orderID)
 
 			if err != nil {
@@ -61,6 +65,7 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 				log.Printf("Error sending request: %v", err)
 				continue
 			}
+			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("Error: Received status code %d, method: %s", resp.StatusCode, url)

@@ -41,7 +41,7 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 		client := &http.Client{}
 		for orderID := range s.orderChan.GetOrderChan() {
 
-			order, err := service.GetOrderByOrderId(orderID)
+			order, err := service.GetOrderByOrderID(orderID)
 
 			if err != nil {
 				log.Printf("Problem searching for an order - %s", err.Error())
@@ -79,7 +79,7 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 			order.Status = orderModel.GetOrderStatusByValue(orderRes.Status)
 			order.Accrual = orderRes.Accrual
 
-			err = s.usBalance.AccrualBalance(order.UserId, order, order.Accrual)
+			err = s.usBalance.AccrualBalance(order.UserID, order, order.Accrual)
 
 			if err != nil {
 				log.Printf("Error saving order: %v", err)

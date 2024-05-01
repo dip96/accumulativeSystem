@@ -1,7 +1,7 @@
 package order
 
 import (
-	apiError "accumulativeSystem/internal/errors/api"
+	APIError "accumulativeSystem/internal/errors/api"
 	"accumulativeSystem/internal/logger"
 	orderModel "accumulativeSystem/internal/models/order"
 	orderRepository "accumulativeSystem/internal/repositories/order"
@@ -17,10 +17,10 @@ import (
 type OrderService interface {
 	CreateOrder(order *orderModel.Order) (*orderModel.Order, error)
 	SaveOrder(order *orderModel.Order) error
-	GetOrderByOrderId(orderId int) (*orderModel.Order, error)
-	GetOrdersByUserId(userId int) ([]*orderModel.Order, error)
-	GetWithdrawalsByUserId(userId int) ([]*orderModel.Order, error)
-	GetOrderByOrderIdAndUserID(orderId int, userId float64) (*orderModel.Order, error)
+	GetOrderByOrderID(OrderID int) (*orderModel.Order, error)
+	GetOrdersByUserID(UserID int) ([]*orderModel.Order, error)
+	GetWithdrawalsByUserID(UserID int) ([]*orderModel.Order, error)
+	GetOrderByOrderIDAndUserID(OrderID int, UserID float64) (*orderModel.Order, error)
 }
 
 type orderService struct {
@@ -37,28 +37,28 @@ func (s *orderService) CreateOrder(order *orderModel.Order) (*orderModel.Order, 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if !isValidLunaChecksum(order.OrderId) {
+	if !isValidLunaChecksum(order.OrderID) {
 		s.logger.Error("not valid card number")
-		return nil, apiError.NewError(http.StatusUnprocessableEntity, "not valid card number", nil)
+		return nil, APIError.NewError(http.StatusUnprocessableEntity, "not valid card number", nil)
 	}
 
-	existingOrder, err := s.GetOrderByOrderId(order.OrderId)
+	existingOrder, err := s.GetOrderByOrderID(order.OrderID)
 
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			s.logger.Error(err.Error())
-			return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+			return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 		}
 	}
 
-	if existingOrder != nil && existingOrder.UserId != order.UserId {
+	if existingOrder != nil && existingOrder.UserID != order.UserID {
 		s.logger.Error("order already exists for another user")
-		return nil, apiError.NewError(http.StatusConflict, "order already exists for another user", nil)
+		return nil, APIError.NewError(http.StatusConflict, "order already exists for another user", nil)
 	}
 
 	if existingOrder != nil {
 		s.logger.Error("order already exists")
-		return nil, apiError.NewError(http.StatusOK, "order already exists", nil)
+		return nil, APIError.NewError(http.StatusOK, "order already exists", nil)
 	}
 
 	err = s.repo.CreateOrder(ctx, nil, order)
@@ -69,23 +69,23 @@ func (s *orderService) CreateOrder(order *orderModel.Order) (*orderModel.Order, 
 		return nil, err
 	}
 
-	order, err = s.repo.GetOrderByOrderId(ctx, nil, order.OrderId)
+	order, err = s.repo.GetOrderByOrderID(ctx, nil, order.OrderID)
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
-	s.chanOrder.EnqueueOrder(order.OrderId)
+	s.chanOrder.EnqueueOrder(order.OrderID)
 
 	return order, nil
 }
 
-func (s *orderService) GetOrderByOrderId(orderId int) (*orderModel.Order, error) {
+func (s *orderService) GetOrderByOrderID(OrderID int) (*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	order, err := s.repo.GetOrderByOrderId(ctx, nil, orderId)
+	order, err := s.repo.GetOrderByOrderID(ctx, nil, OrderID)
 
 	if err != nil {
 		s.logger.Error(err.Error())
@@ -95,49 +95,49 @@ func (s *orderService) GetOrderByOrderId(orderId int) (*orderModel.Order, error)
 	return order, nil
 }
 
-func (s *orderService) GetOrdersByUserId(userId int) ([]*orderModel.Order, error) {
+func (s *orderService) GetOrdersByUserID(UserID int) ([]*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	orders, err := s.repo.GetOrdersByUserId(ctx, nil, userId)
+	orders, err := s.repo.GetOrdersByUserID(ctx, nil, UserID)
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	if len(orders) == 0 {
 		s.logger.Error("Not found orders")
-		return nil, apiError.NewError(http.StatusNoContent, "Not found orders", err)
+		return nil, APIError.NewError(http.StatusNoContent, "Not found orders", err)
 	}
 
 	return orders, nil
 }
 
-func (s *orderService) GetWithdrawalsByUserId(userId int) ([]*orderModel.Order, error) {
+func (s *orderService) GetWithdrawalsByUserID(UserID int) ([]*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	orders, err := s.repo.GetWithdrawalsByUserId(ctx, nil, userId)
+	orders, err := s.repo.GetWithdrawalsByUserID(ctx, nil, UserID)
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	if len(orders) == 0 {
 		s.logger.Error("Not found orders")
-		return nil, apiError.NewError(http.StatusNoContent, "Not found orders", err)
+		return nil, APIError.NewError(http.StatusNoContent, "Not found orders", err)
 	}
 
 	return orders, nil
 }
 
-func (s *orderService) GetOrderByOrderIdAndUserID(orderId int, userId float64) (*orderModel.Order, error) {
+func (s *orderService) GetOrderByOrderIDAndUserID(OrderID int, UserID float64) (*orderModel.Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	order, err := s.repo.GetOrderByOrderIdAndUserID(ctx, nil, orderId, userId)
+	order, err := s.repo.GetOrderByOrderIDAndUserID(ctx, nil, OrderID, UserID)
 
 	if err != nil {
 		s.logger.Error(err.Error())

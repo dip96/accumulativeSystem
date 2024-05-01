@@ -2,13 +2,13 @@ package api
 
 import "fmt"
 
-type ApiError struct {
+type APIError struct {
 	Code    int // Код ошибки
 	Message string
 	Err     error
 }
 
-func (e *ApiError) Error() string {
+func (e *APIError) Error() string {
 	if e.Err != nil {
 		return fmt.Sprintf("%s (Code: %d, Error: %v)", e.Message, e.Code, e.Err)
 	}
@@ -16,7 +16,7 @@ func (e *ApiError) Error() string {
 }
 
 func NewError(code int, message string, err error) error {
-	return &ApiError{
+	return &APIError{
 		Code:    code,
 		Message: message,
 		Err:     err,

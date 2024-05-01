@@ -1,7 +1,7 @@
 package registration
 
 import (
-	apiError "accumulativeSystem/internal/errors/api"
+	APIError "accumulativeSystem/internal/errors/api"
 	orderService "accumulativeSystem/internal/services/order"
 	"encoding/json"
 	"errors"
@@ -23,21 +23,22 @@ type OrderResponse struct {
 
 func New(service orderService.OrderService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := r.Context().Value("user_id")
+		contextUserID := r.Context().Value("user_id")
 
-		if userId == nil {
+		if contextUserID == nil {
 			http.Error(w, "Not user id", http.StatusInternalServerError)
 		}
 
-		userID, ok := userId.(int)
+		userID, ok := contextUserID.(int)
+
 		if !ok {
 			http.Error(w, "Error userID", http.StatusInternalServerError)
 		}
 
-		orders, err := service.GetWithdrawalsByUserId(userID)
+		orders, err := service.GetWithdrawalsByUserID(userID)
 
 		if err != nil {
-			var customErr *apiError.ApiError
+			var customErr *APIError.APIError
 			if errors.As(err, &customErr) {
 				http.Error(w, customErr.Error(), customErr.Code)
 				return
@@ -50,7 +51,7 @@ func New(service orderService.OrderService) http.HandlerFunc {
 		for i, order := range orders {
 			createdAt := order.CreatedAt.Time
 			orderResponses[i] = OrderResponse{
-				Order:      strconv.Itoa(order.OrderId),
+				Order:      strconv.Itoa(order.OrderID),
 				Sum:        float32(order.WithdrawnBalance),
 				UploadedAt: createdAt,
 			}

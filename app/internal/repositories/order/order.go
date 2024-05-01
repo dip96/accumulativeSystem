@@ -10,10 +10,10 @@ import (
 type OrderRepository interface {
 	CreateOrder(ctx context.Context, tx pgx.Tx, order *orderModel.Order) error
 	Save(ctx context.Context, tx pgx.Tx, order *orderModel.Order) error
-	GetOrderByOrderId(ctx context.Context, tx pgx.Tx, orderId int) (*orderModel.Order, error)
-	GetOrdersByUserId(ctx context.Context, tx pgx.Tx, userId int) ([]*orderModel.Order, error)
-	GetWithdrawalsByUserId(ctx context.Context, tx pgx.Tx, userId int) ([]*orderModel.Order, error)
-	GetOrderByOrderIdAndUserID(ctx context.Context, tx pgx.Tx, orderId int, userId float64) (*orderModel.Order, error)
+	GetOrderByOrderID(ctx context.Context, tx pgx.Tx, OrderID int) (*orderModel.Order, error)
+	GetOrdersByUserID(ctx context.Context, tx pgx.Tx, userID int) ([]*orderModel.Order, error)
+	GetWithdrawalsByUserID(ctx context.Context, tx pgx.Tx, userID int) ([]*orderModel.Order, error)
+	GetOrderByOrderIDAndUserID(ctx context.Context, tx pgx.Tx, OrderID int, userID float64) (*orderModel.Order, error)
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
@@ -29,11 +29,11 @@ func (o *orderRepository) CreateOrder(ctx context.Context, tx pgx.Tx, order *ord
 	sqlQuery := "INSERT INTO orders (user_id, order_id, status, accrual, withdrawn_balance) VALUES ($1,$2, $3, $4, $5)"
 
 	if tx == nil {
-		_, err := o.db.Exec(ctx, sqlQuery, order.UserId, order.OrderId, orderModel.OrderStatusNew, 0, order.WithdrawnBalance)
+		_, err := o.db.Exec(ctx, sqlQuery, order.UserID, order.OrderID, orderModel.OrderStatusNew, 0, order.WithdrawnBalance)
 		return err
 	}
 
-	_, err := tx.Exec(ctx, sqlQuery, order.UserId, order.OrderId, orderModel.OrderStatusNew, 0, order.WithdrawnBalance)
+	_, err := tx.Exec(ctx, sqlQuery, order.UserID, order.OrderID, orderModel.OrderStatusNew, 0, order.WithdrawnBalance)
 	return err
 }
 
@@ -43,27 +43,27 @@ func (o *orderRepository) Save(ctx context.Context, tx pgx.Tx, order *orderModel
 	sqlQuery = "UPDATE orders SET status = $1, accrual = $2 WHERE id = $3"
 
 	if tx == nil {
-		_, err := o.db.Exec(ctx, sqlQuery, order.Status, order.Accrual, order.Id)
+		_, err := o.db.Exec(ctx, sqlQuery, order.Status, order.Accrual, order.ID)
 		return err
 	}
 
-	_, err := tx.Exec(ctx, sqlQuery, order.Status, order.Accrual, order.Id)
+	_, err := tx.Exec(ctx, sqlQuery, order.Status, order.Accrual, order.ID)
 	return err
 }
 
-func (o *orderRepository) GetOrderByOrderId(ctx context.Context, tx pgx.Tx, orderId int) (*orderModel.Order, error) {
+func (o *orderRepository) GetOrderByOrderID(ctx context.Context, tx pgx.Tx, OrderID int) (*orderModel.Order, error) {
 	sqlSelect := "SELECT id, user_id, order_id, accrual, status, created_at FROM orders WHERE order_id = $1"
 	var order orderModel.Order
 
 	if tx == nil {
-		err := o.db.QueryRow(ctx, sqlSelect, orderId).Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.Status, &order.CreatedAt)
+		err := o.db.QueryRow(ctx, sqlSelect, OrderID).Scan(&order.ID, &order.UserID, &order.OrderID, &order.Accrual, &order.Status, &order.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		return &order, nil
 	}
 
-	err := tx.QueryRow(ctx, sqlSelect, orderId).Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.Status, &order.CreatedAt)
+	err := tx.QueryRow(ctx, sqlSelect, OrderID).Scan(&order.ID, &order.UserID, &order.OrderID, &order.Accrual, &order.Status, &order.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -71,10 +71,10 @@ func (o *orderRepository) GetOrderByOrderId(ctx context.Context, tx pgx.Tx, orde
 	return &order, nil
 }
 
-func (o *orderRepository) GetOrdersByUserId(ctx context.Context, tx pgx.Tx, userId int) ([]*orderModel.Order, error) {
+func (o *orderRepository) GetOrdersByUserID(ctx context.Context, tx pgx.Tx, userID int) ([]*orderModel.Order, error) {
 	sqlSelect := "SELECT id, user_id, order_id, accrual, status, created_at FROM orders WHERE user_id = $1 ORDER BY created_at ASC"
 
-	rows, err := o.db.Query(ctx, sqlSelect, userId)
+	rows, err := o.db.Query(ctx, sqlSelect, userID)
 
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (o *orderRepository) GetOrdersByUserId(ctx context.Context, tx pgx.Tx, user
 	var orders []*orderModel.Order
 	for rows.Next() {
 		order := &orderModel.Order{}
-		err = rows.Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.Status, &order.CreatedAt)
+		err = rows.Scan(&order.ID, &order.UserID, &order.OrderID, &order.Accrual, &order.Status, &order.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -98,10 +98,10 @@ func (o *orderRepository) GetOrdersByUserId(ctx context.Context, tx pgx.Tx, user
 	return orders, nil
 }
 
-func (o *orderRepository) GetWithdrawalsByUserId(ctx context.Context, tx pgx.Tx, userId int) ([]*orderModel.Order, error) {
+func (o *orderRepository) GetWithdrawalsByUserID(ctx context.Context, tx pgx.Tx, userID int) ([]*orderModel.Order, error) {
 	sqlSelect := "SELECT id, user_id, order_id, accrual, withdrawn_balance, status, created_at FROM orders WHERE user_id = $1 AND withdrawn_balance > 0 ORDER BY created_at ASC"
 
-	rows, err := o.db.Query(ctx, sqlSelect, userId)
+	rows, err := o.db.Query(ctx, sqlSelect, userID)
 
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (o *orderRepository) GetWithdrawalsByUserId(ctx context.Context, tx pgx.Tx,
 	var orders []*orderModel.Order
 	for rows.Next() {
 		order := &orderModel.Order{}
-		err = rows.Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.WithdrawnBalance, &order.Status, &order.CreatedAt)
+		err = rows.Scan(&order.ID, &order.UserID, &order.OrderID, &order.Accrual, &order.WithdrawnBalance, &order.Status, &order.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -125,19 +125,19 @@ func (o *orderRepository) GetWithdrawalsByUserId(ctx context.Context, tx pgx.Tx,
 	return orders, nil
 }
 
-func (o *orderRepository) GetOrderByOrderIdAndUserID(ctx context.Context, tx pgx.Tx, orderId int, userId float64) (*orderModel.Order, error) {
+func (o *orderRepository) GetOrderByOrderIDAndUserID(ctx context.Context, tx pgx.Tx, OrderID int, userID float64) (*orderModel.Order, error) {
 	sqlSelect := "SELECT id, user_id, order_id, accrual, status, created_at FROM orders WHERE order_id = $1 AND user_id = $2"
 	var order orderModel.Order
 
 	if tx == nil {
-		err := o.db.QueryRow(ctx, sqlSelect, orderId, userId).Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.Status, &order.CreatedAt)
+		err := o.db.QueryRow(ctx, sqlSelect, OrderID, userID).Scan(&order.ID, &order.UserID, &order.OrderID, &order.Accrual, &order.Status, &order.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		return &order, nil
 	}
 
-	err := tx.QueryRow(ctx, sqlSelect, orderId, userId).Scan(&order.Id, &order.UserId, &order.OrderId, &order.Accrual, &order.Status, &order.CreatedAt)
+	err := tx.QueryRow(ctx, sqlSelect, OrderID, userID).Scan(&order.ID, &order.UserID, &order.OrderID, &order.Accrual, &order.Status, &order.CreatedAt)
 
 	if err != nil {
 		return nil, err

@@ -5,9 +5,9 @@ import (
 )
 
 type Order struct {
-	Id               int              `json:"id"`
-	UserId           int              `json:"user_id"`
-	OrderId          int              `json:"order_id"`
+	ID               int              `json:"id"`
+	UserID           int              `json:"user_id"`
+	OrderID          int              `json:"order_id"`
 	Accrual          float64          `json:"accrual"`
 	WithdrawnBalance float64          `json:"withdrawn_balance"`
 	Status           OrderStatus      `json:"status"`

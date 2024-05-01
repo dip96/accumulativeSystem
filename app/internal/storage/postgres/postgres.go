@@ -18,7 +18,7 @@ type storage struct {
 }
 
 func NewDb(cnf config.ConfigInstance) (storageInterface.Storage, error) {
-	pool, err := pgxpool.New(context.Background(), cnf.GetDatabaseURI())
+	pool, err := pgxpool.New(context.Background(), cnf.GetdatabaseURI())
 	if err != nil {
 		return nil, postgresError.New("error while initializing postgres pool", err)
 	}

@@ -1,7 +1,7 @@
 package registration
 
 import (
-	apiError "accumulativeSystem/internal/errors/api"
+	APIError "accumulativeSystem/internal/errors/api"
 	userService "accumulativeSystem/internal/services/user"
 	"errors"
 	"github.com/go-chi/jwtauth"
@@ -23,7 +23,7 @@ func New(userService userService.UserService, jwtAuth *jwtauth.JWTAuth) http.Han
 		user, err := userService.CreateUser(req.Login, req.Password)
 
 		if err != nil {
-			var customErr *apiError.ApiError
+			var customErr *APIError.APIError
 			if errors.As(err, &customErr) {
 				http.Error(w, customErr.Error(), customErr.Code)
 				return

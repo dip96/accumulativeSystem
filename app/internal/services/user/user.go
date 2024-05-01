@@ -1,7 +1,7 @@
 package user
 
 import (
-	apiError "accumulativeSystem/internal/errors/api"
+	APIError "accumulativeSystem/internal/errors/api"
 	"accumulativeSystem/internal/lib/hash"
 	"accumulativeSystem/internal/logger"
 	balanceModel "accumulativeSystem/internal/models/balance"
@@ -45,7 +45,7 @@ func (s *userService) CreateUser(login, password string) (*userModel.User, error
 	tx, err := s.repo.Begin(ctx)
 	if err != nil {
 		s.logger.Error(err.Error())
-		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	defer func() {
@@ -68,18 +68,18 @@ func (s *userService) CreateUser(login, password string) (*userModel.User, error
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" {
 				s.logger.Error(err.Error())
-				return nil, apiError.NewError(http.StatusConflict, "duplicate login", pgErr)
+				return nil, APIError.NewError(http.StatusConflict, "duplicate login", pgErr)
 			}
 		}
 		s.logger.Error(err.Error())
-		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	user, err := s.repo.GetUser(ctx, tx, login)
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return nil, apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return nil, APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	var uBalance balanceModel.UserBalance

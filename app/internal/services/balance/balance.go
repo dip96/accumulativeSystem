@@ -1,7 +1,7 @@
 package balance
 
 import (
-	apiError "accumulativeSystem/internal/errors/api"
+	APIError "accumulativeSystem/internal/errors/api"
 	"accumulativeSystem/internal/logger"
 	balanceModel "accumulativeSystem/internal/models/balance"
 	orderModel "accumulativeSystem/internal/models/order"
@@ -58,7 +58,7 @@ func (s *balanceService) GetUserBalance(userID int) (*balanceModel.UserBalance, 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			s.logger.Error(err.Error())
-			return nil, apiError.NewError(http.StatusInternalServerError, "no balance information", err)
+			return nil, APIError.NewError(http.StatusInternalServerError, "no balance information", err)
 		}
 	}
 
@@ -88,7 +88,7 @@ func (s *balanceService) WithdrawBalance(userID int, orderID int, sum float64) e
 	// Начинаем транзакцию
 	tx, err := s.repo.Begin(ctx)
 	if err != nil {
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	defer func() {
@@ -110,23 +110,23 @@ func (s *balanceService) WithdrawBalance(userID int, orderID int, sum float64) e
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	//Проверяем, достаточно ли средств
 	if userBalanceDecimal.LessThan(sumDecimal) {
-		return apiError.NewError(http.StatusPaymentRequired, "insufficient funds", nil)
+		return APIError.NewError(http.StatusPaymentRequired, "insufficient funds", nil)
 	}
 
 	// Создаем новый заказ
 	var order orderModel.Order
-	order.OrderId = orderID
-	order.UserId = userID
+	order.OrderID = orderID
+	order.UserID = userID
 	order.WithdrawnBalance = sum
 	err = s.repoOrder.CreateOrder(ctx, tx, &order)
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	// Обновляем баланс пользователя
@@ -138,7 +138,7 @@ func (s *balanceService) WithdrawBalance(userID int, orderID int, sum float64) e
 	err = s.repo.UpdateUserBalance(ctx, tx, userBalance)
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	return nil
@@ -154,7 +154,7 @@ func (s *balanceService) AccrualBalance(userID int, order *orderModel.Order, sum
 	tx, err := s.repo.Begin(ctx)
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", err)
 	}
 
 	defer func() {
@@ -175,7 +175,7 @@ func (s *balanceService) AccrualBalance(userID int, order *orderModel.Order, sum
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	userBalance, err := s.repo.GetUserBalance(ctx, tx, userID)
@@ -183,7 +183,7 @@ func (s *balanceService) AccrualBalance(userID int, order *orderModel.Order, sum
 
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	// Обновляем баланс пользователя
@@ -193,7 +193,7 @@ func (s *balanceService) AccrualBalance(userID int, order *orderModel.Order, sum
 	err = s.repo.UpdateUserBalance(ctx, tx, userBalance)
 	if err != nil {
 		s.logger.Error(err.Error())
-		return apiError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
+		return APIError.NewError(http.StatusInternalServerError, "Internal Server Error", nil)
 	}
 
 	return nil

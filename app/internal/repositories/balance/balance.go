@@ -34,19 +34,19 @@ func (r *balanceRepository) CreateBalance(ctx context.Context, tx pgx.Tx, balanc
 	return err
 }
 
-func (r *balanceRepository) GetUserBalance(ctx context.Context, tx pgx.Tx, userID int) (*balanceModel.UserBalance, error) {
+func (r *balanceRepository) GetUserBalance(ctx context.Context, tx pgx.Tx, UserID int) (*balanceModel.UserBalance, error) {
 	sqlSelect := "SELECT id, user_id, balance, withdrawn_balance FROM user_balances WHERE user_id = $1"
 	var userBalance balanceModel.UserBalance
 
 	if tx == nil {
-		err := r.db.QueryRow(ctx, sqlSelect, userID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
+		err := r.db.QueryRow(ctx, sqlSelect, UserID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
 		if err != nil {
 			return nil, err
 		}
 		return &userBalance, nil
 	}
 
-	err := tx.QueryRow(ctx, sqlSelect, userID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
+	err := tx.QueryRow(ctx, sqlSelect, UserID).Scan(&userBalance.ID, &userBalance.UserID, &userBalance.Balance, &userBalance.WithdrawnBalance)
 	if err != nil {
 		return nil, err
 	}

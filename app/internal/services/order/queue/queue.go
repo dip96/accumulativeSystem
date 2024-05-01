@@ -1,7 +1,7 @@
-package orderChan
+package orderqueue
 
 type OrderQueueService interface {
-	EnqueueOrder(orderId int)
+	EnqueueOrder(orderID int)
 	GetOrderChan() chan int
 }
 

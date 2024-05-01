@@ -57,8 +57,8 @@ func AuthMiddleware(log logger.Logger) func(http.Handler) http.Handler {
 			//	return
 			//}
 
-			userId := int(mapValue["user_id"].(float64))
-			ctx := context.WithValue(r.Context(), "user_id", userId)
+			userID := int(mapValue["user_id"].(float64))
+			ctx := context.WithValue(r.Context(), "user_id", userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -13,14 +13,14 @@ import (
 // ConfigInstance - интерфейс для получения значений конфигурации
 type ConfigInstance interface {
 	GetRunAddress() string
-	GetDatabaseURI() string
+	GetdatabaseURI() string
 	GetAccrualSystemAddress() string
 	GetMigrationPath() string
 }
 
 type Config struct {
 	runAddress           string
-	databaseUri          string
+	databaseURI          string
 	accrualSystemAddress string
 	migrationPath        string
 	idleTimeout          time.Duration
@@ -73,9 +73,9 @@ func initConfig() (ConfigInstance, error) {
 	return &cfg, nil
 }
 func parseFlags(cfg *Config) error {
-	flag.StringVar(&cfg.runAddress, "a", "", "address and port to run server")
+	flag.StringVar(&cfg.runAddress, "a", "localhost:8082", "address and port to run server")
 	//flag.StringVar(&cfg.runAddress, "a", "0.0.0.0:8080", "address and port to run server")
-	flag.StringVar(&cfg.databaseUri, "d", fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "postgres"), "")
+	flag.StringVar(&cfg.databaseURI, "d", fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "postgres"), "")
 	flag.StringVar(&cfg.accrualSystemAddress, "r", "http://localhost:8081", "address of the accrual calculation system")
 	flag.StringVar(&cfg.migrationPath, "m", "file:./migrations", "")
 
@@ -88,8 +88,8 @@ func overrideFromEnv(cfg *Config) error {
 		cfg.runAddress = envRunAddr
 	}
 
-	if envDatabaseUri := os.Getenv("DATABASE_URI"); envDatabaseUri != "" {
-		cfg.databaseUri = envDatabaseUri
+	if envDatabaseURI := os.Getenv("DATABASE_URI"); envDatabaseURI != "" {
+		cfg.databaseURI = envDatabaseURI
 	}
 
 	if envAccrualSystemAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); envAccrualSystemAddress != "" {
@@ -104,8 +104,8 @@ func (c *Config) GetRunAddress() string {
 	return c.runAddress
 }
 
-func (c *Config) GetDatabaseURI() string {
-	return c.databaseUri
+func (c *Config) GetdatabaseURI() string {
+	return c.databaseURI
 }
 
 func (c *Config) GetAccrualSystemAddress() string {

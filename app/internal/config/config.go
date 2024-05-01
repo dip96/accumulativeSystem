@@ -72,8 +72,8 @@ func initConfig() (ConfigInstance, error) {
 	return &cfg, nil
 }
 func parseFlags(cfg *Config) error {
-	flag.StringVar(&cfg.runAddress, "a", "localhost:8080", "address and port to run server")
-	flag.StringVar(&cfg.databaseURI, "d", "postgresql://postgres:postgres@postgres/praktikum?sslmode=disable", "")
+	flag.StringVar(&cfg.runAddress, "a", "", "address and port to run server")
+	flag.StringVar(&cfg.databaseURI, "d", "", "")
 	flag.StringVar(&cfg.accrualSystemAddress, "r", "", "address of the accrual calculation system")
 	flag.StringVar(&cfg.migrationPath, "m", "file:./migrations", "")
 	//flag.StringVar(&cfg.runAddress, "a", "0.0.0.0:8080", "address and port to run server")

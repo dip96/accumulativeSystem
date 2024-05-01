@@ -62,10 +62,10 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 				log.Printf("Error sending request: %v", err)
 				continue
 			}
-			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("Error: Received status code %d, method: %s", resp.StatusCode, url)
+				resp.Body.Close()
 				continue
 			}
 
@@ -74,6 +74,7 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 			err = json.NewDecoder(resp.Body).Decode(&orderRes)
 			if err != nil {
 				log.Printf("Error decoding response: %v", err)
+				resp.Body.Close()
 				continue
 			}
 
@@ -85,6 +86,8 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 			if err != nil {
 				log.Printf("Error saving order: %v", err)
 			}
+
+			resp.Body.Close()
 		}
 	}()
 }

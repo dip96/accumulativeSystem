@@ -31,8 +31,7 @@ func NewMigrator(cnf config.ConfigInstance) (Migrator, error) {
 
 func (m *migrator) Up() error {
 	if err := m.instance.Up(); err != nil {
-		if errors.As(err, &migrate.ErrNoChange) {
-			// изменений нет, можно выходить
+		if errors.Is(err, migrate.ErrNoChange) {
 			return nil
 		}
 		return migratorError.New("error during up migration", err)
@@ -43,7 +42,7 @@ func (m *migrator) Up() error {
 
 func (m *migrator) Down() error {
 	if err := m.instance.Down(); err != nil {
-		if errors.As(err, &migrate.ErrNoChange) {
+		if errors.Is(err, migrate.ErrNoChange) {
 			// изменений нет, можно выходить
 			return nil
 		}

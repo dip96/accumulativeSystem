@@ -10,12 +10,12 @@ import (
 )
 
 func main() {
-	//init config
-	//TODO переделать на yaml?
-	cnf := config.MustLoad()
-
 	//init logger
 	log := logger.Init(config.EnvLocal)
+
+	log.Info("init config")
+	//TODO переделать на yaml?
+	cnf := config.MustLoad()
 
 	//init migrator
 	log.Info("init migrator")

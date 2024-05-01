@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+type contextKey string
+
 func AuthMiddleware(log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -57,8 +59,9 @@ func AuthMiddleware(log logger.Logger) func(http.Handler) http.Handler {
 			//	return
 			//}
 
+			var userIDKey = contextKey("user_id")
 			userID := int(mapValue["user_id"].(float64))
-			ctx := context.WithValue(r.Context(), "user_id", userID)
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

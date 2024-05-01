@@ -83,7 +83,7 @@ func (s *userService) CreateUser(login, password string) (*userModel.User, error
 	}
 
 	var uBalance balanceModel.UserBalance
-	uBalance.UserID = user.Id
+	uBalance.UserID = user.ID
 	uBalance.Balance = 0
 	uBalance.WithdrawnBalance = 0
 

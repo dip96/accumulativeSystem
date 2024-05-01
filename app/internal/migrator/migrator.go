@@ -18,10 +18,10 @@ type migrator struct {
 }
 
 func NewMigrator(cnf config.ConfigInstance) (Migrator, error) {
-	sourceUrl := cnf.GetMigrationPath()
-	databaseUrl := cnf.GetdatabaseURI()
+	sourceURL := cnf.GetMigrationPath()
+	databaseURL := cnf.GetdatabaseURI()
 
-	instanceMigrate, err := migrate.New(sourceUrl, databaseUrl)
+	instanceMigrate, err := migrate.New(sourceURL, databaseURL)
 	if err != nil {
 		return nil, migratorError.New("error during migration", err)
 	}

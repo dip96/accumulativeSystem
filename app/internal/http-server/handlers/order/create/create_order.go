@@ -21,6 +21,11 @@ func New(service orderService.OrderService) http.HandlerFunc {
 
 		userID, ok := contextUserID.(int)
 
+		if !ok {
+			http.Error(w, "Error", http.StatusInternalServerError)
+			return
+		}
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -31,8 +36,9 @@ func New(service orderService.OrderService) http.HandlerFunc {
 
 		orderIDInt, err := strconv.Atoi(orderID)
 
-		if !ok {
+		if err != nil {
 			http.Error(w, "Error userID", http.StatusInternalServerError)
+			return
 		}
 
 		var order orderModel.Order

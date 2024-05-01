@@ -20,6 +20,11 @@ func New(userService userService.UserService, jwtAuth *jwtauth.JWTAuth) http.Han
 		var req Request
 		err := render.DecodeJSON(r.Body, &req)
 
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
 		user, err := userService.GetUserWithPassword(req.Login)
 
 		if err != nil {
@@ -35,7 +40,7 @@ func New(userService userService.UserService, jwtAuth *jwtauth.JWTAuth) http.Han
 		}
 
 		_, tokenString, err := jwtAuth.Encode(map[string]interface{}{
-			"user_id": user.Id,
+			"user_id": user.ID,
 			"exp":     time.Now().Add(time.Hour * 24).Unix(), // действителен в течение 24 часов
 		})
 

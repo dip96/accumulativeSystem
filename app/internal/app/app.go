@@ -64,7 +64,7 @@ func NewApp(cfg config.ConfigInstance, storage storage.Storage, log logger.Logge
 	baService := balanceService.NewBalanceService(balanceRepo, orderRepo, log)
 
 	// Создаём каналы
-	orderChanService := queueService.NewOrderQueueService(cfg, orderChan, baService)
+	orderChanService := queueservice.NewOrderQueueService(cfg, orderChan, baService)
 
 	//Run goroutine
 	orderChanService.RunGoroutine(orService)
@@ -126,10 +126,15 @@ func (app *App) Run() error {
 	app.Logger.Info("Starting server...")
 	file, err := os.Create("output.txt")
 	if err != nil {
-		//log.Error("failed to create file:", err)
-
+		app.Logger.Error("failed to create file:", err)
 	}
 	defer file.Close()
+
 	_, err = file.WriteString("Starting server...\n")
+
+	if err != nil {
+		app.Logger.Error("failed to create file:", err)
+	}
+
 	return srv.ListenAndServe()
 }

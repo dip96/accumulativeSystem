@@ -38,9 +38,7 @@ func (o *orderRepository) CreateOrder(ctx context.Context, tx pgx.Tx, order *ord
 }
 
 func (o *orderRepository) Save(ctx context.Context, tx pgx.Tx, order *orderModel.Order) error {
-	var sqlQuery string
-
-	sqlQuery = "UPDATE orders SET status = $1, accrual = $2 WHERE id = $3"
+	sqlQuery := "UPDATE orders SET status = $1, accrual = $2 WHERE id = $3"
 
 	if tx == nil {
 		_, err := o.db.Exec(ctx, sqlQuery, order.Status, order.Accrual, order.ID)

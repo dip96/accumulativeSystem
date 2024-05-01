@@ -1,4 +1,4 @@
-package createOrder
+package get
 
 import (
 	APIError "accumulativeSystem/internal/errors/api"

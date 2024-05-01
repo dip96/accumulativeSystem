@@ -28,7 +28,7 @@ func main() {
 
 	//init storage
 	log.Info("init storage")
-	storage, err := postgres.NewDb(cnf)
+	storage, err := postgres.NewDB(cnf)
 
 	if err != nil {
 		log.Error("failed to create storage:", err)

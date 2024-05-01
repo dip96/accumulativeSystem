@@ -39,6 +39,11 @@ func (s *balanceService) CreateBalance(balance *balanceModel.UserBalance) (*bala
 
 	err := s.repo.CreateBalance(ctx, nil, balance)
 
+	if err != nil {
+		s.logger.Error(err.Error())
+		return nil, err
+	}
+
 	usBalance, err := s.repo.GetUserBalance(ctx, nil, balance.UserID)
 
 	if err != nil {

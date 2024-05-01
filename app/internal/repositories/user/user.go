@@ -5,7 +5,6 @@ import (
 	"accumulativeSystem/internal/storage"
 	"context"
 	"github.com/jackc/pgx/v5"
-	"time"
 )
 
 type UserRepository interface {
@@ -32,8 +31,6 @@ func NewUserRepository(storage storage.Storage) UserRepository {
 
 func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, login string, password []byte) error {
 	sqlQuery := "INSERT INTO users (login, password) VALUES ($1,$2)"
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	if tx == nil {
 		_, err := r.db.Exec(ctx, sqlQuery, login, password)
@@ -50,14 +47,14 @@ func (r *userRepository) GetUser(ctx context.Context, tx pgx.Tx, login string) (
 	var user userModel.User
 
 	if tx == nil {
-		err := r.db.QueryRow(ctx, sqlSelect, login).Scan(&user.Id, &user.Login, &user.CreatedAt)
+		err := r.db.QueryRow(ctx, sqlSelect, login).Scan(&user.ID, &user.Login, &user.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		return &user, nil
 	}
 
-	err := tx.QueryRow(ctx, sqlSelect, login).Scan(&user.Id, &user.Login, &user.CreatedAt)
+	err := tx.QueryRow(ctx, sqlSelect, login).Scan(&user.ID, &user.Login, &user.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +65,7 @@ func (r *userRepository) GetUser(ctx context.Context, tx pgx.Tx, login string) (
 func (r *userRepository) GetUserWithPassword(ctx context.Context, tx pgx.Tx, login string) (*userModel.User, error) {
 	sqlSelect := "SELECT id, login, password FROM users WHERE login = $1"
 	var user userModel.User
-	err := r.db.QueryRow(ctx, sqlSelect, login).Scan(&user.Id, &user.Login, &user.HashPassword)
+	err := r.db.QueryRow(ctx, sqlSelect, login).Scan(&user.ID, &user.Login, &user.HashPassword)
 
 	if err != nil {
 		return nil, err

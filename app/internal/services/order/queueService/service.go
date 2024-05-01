@@ -1,4 +1,4 @@
-package queueService
+package queueservice
 
 import (
 	"accumulativeSystem/internal/config"
@@ -61,7 +61,6 @@ func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 				log.Printf("Error sending request: %v", err)
 				continue
 			}
-			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("Error: Received status code %d, method: %s", resp.StatusCode, url)

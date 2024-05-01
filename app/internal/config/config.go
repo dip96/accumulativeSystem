@@ -4,7 +4,6 @@ import (
 	configError "accumulativeSystem/internal/errors/config"
 	"errors"
 	"flag"
-	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -73,11 +72,13 @@ func initConfig() (ConfigInstance, error) {
 	return &cfg, nil
 }
 func parseFlags(cfg *Config) error {
-	flag.StringVar(&cfg.runAddress, "a", "localhost:8082", "address and port to run server")
-	//flag.StringVar(&cfg.runAddress, "a", "0.0.0.0:8080", "address and port to run server")
-	flag.StringVar(&cfg.databaseURI, "d", fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "postgres"), "")
-	flag.StringVar(&cfg.accrualSystemAddress, "r", "http://localhost:8081", "address of the accrual calculation system")
+	flag.StringVar(&cfg.runAddress, "a", "localhost:8080", "address and port to run server")
+	flag.StringVar(&cfg.databaseURI, "d", "postgresql://postgres:postgres@postgres/praktikum?sslmode=disable", "")
+	flag.StringVar(&cfg.accrualSystemAddress, "r", "", "address of the accrual calculation system")
 	flag.StringVar(&cfg.migrationPath, "m", "file:./migrations", "")
+	//flag.StringVar(&cfg.runAddress, "a", "0.0.0.0:8080", "address and port to run server")
+	//flag.StringVar(&cfg.databaseURI, "d", fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=disable", "postgres", "postgres", "localhost", 5432, "postgres"), "")
+	//flag.StringVar(&cfg.accrualSystemAddress, "r", "http://localhost:8081", "address of the accrual calculation system")
 
 	flag.Parse()
 	return nil

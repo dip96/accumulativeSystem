@@ -39,14 +39,11 @@ func NewOrderQueueService(cfg config.ConfigInstance, service orderChan.OrderQueu
 func (s *orderQueue) RunGoroutine(service orderService.OrderService) {
 	go func() {
 		client := &http.Client{}
-		for orderID := range s.orderChan.GetOrderChan() {
+		orChan := s.orderChan.GetOrderChan()
+		defer close(orChan)
 
-			if _, ok := <-s.orderChan.GetOrderChan(); !ok {
-				break
-			}
-
+		for orderID := range orChan {
 			order, err := service.GetOrderByOrderID(orderID)
-
 			if err != nil {
 				log.Printf("Problem searching for an order - %s", err.Error())
 				continue

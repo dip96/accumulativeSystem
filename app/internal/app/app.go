@@ -47,7 +47,12 @@ func NewApp(cfg config.ConfigInstance, storage storage.Storage, log logger.Logge
 	}
 
 	//run migrator
-	mig.Up()
+	err := mig.Up()
+
+	if err != nil {
+		app.Logger.Error("Error migrator")
+		panic("Error migrator")
+	}
 
 	//Создаём каналы
 	orderChan := orderQueue.NewOrderQueue()

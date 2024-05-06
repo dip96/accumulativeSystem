@@ -2,6 +2,7 @@ package get
 
 import (
 	APIError "accumulativeSystem/internal/errors/api"
+	"accumulativeSystem/internal/http-server/middleware/auth"
 	balanceService "accumulativeSystem/internal/services/balance"
 	"encoding/json"
 	"errors"
@@ -15,7 +16,8 @@ type BalanceResponse struct {
 
 func New(service balanceService.BalanceService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		contextUserID := r.Context().Value("user_id")
+		var userIDKey = auth.ContextKey("user_id")
+		contextUserID := r.Context().Value(userIDKey)
 
 		if contextUserID == nil {
 			http.Error(w, "Not user id", http.StatusInternalServerError)

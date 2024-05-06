@@ -25,7 +25,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -124,17 +123,5 @@ func (app *App) Run() error {
 	//}()
 
 	app.Logger.Info("Starting server...")
-	file, err := os.Create("output.txt")
-	if err != nil {
-		app.Logger.Error("failed to create file:", err)
-	}
-	defer file.Close()
-
-	_, err = file.WriteString("Starting server...\n")
-
-	if err != nil {
-		app.Logger.Error("failed to create file:", err)
-	}
-
 	return srv.ListenAndServe()
 }

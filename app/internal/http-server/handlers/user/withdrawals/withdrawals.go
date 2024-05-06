@@ -2,6 +2,7 @@ package registration
 
 import (
 	APIError "accumulativeSystem/internal/errors/api"
+	"accumulativeSystem/internal/http-server/middleware/auth"
 	orderService "accumulativeSystem/internal/services/order"
 	"encoding/json"
 	"errors"
@@ -23,7 +24,8 @@ type OrderResponse struct {
 
 func New(service orderService.OrderService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		contextUserID := r.Context().Value("user_id")
+		var userIDKey = auth.ContextKey("user_id")
+		contextUserID := r.Context().Value(userIDKey)
 
 		if contextUserID == nil {
 			http.Error(w, "Not user id", http.StatusInternalServerError)

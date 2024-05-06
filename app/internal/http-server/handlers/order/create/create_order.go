@@ -2,6 +2,7 @@ package create
 
 import (
 	APIError "accumulativeSystem/internal/errors/api"
+	"accumulativeSystem/internal/http-server/middleware/auth"
 	orderModel "accumulativeSystem/internal/models/order"
 	orderService "accumulativeSystem/internal/services/order"
 	"errors"
@@ -13,7 +14,8 @@ import (
 
 func New(service orderService.OrderService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		contextUserID := r.Context().Value("user_id")
+		var userIDKey = auth.ContextKey("user_id")
+		contextUserID := r.Context().Value(userIDKey)
 
 		if contextUserID == nil {
 			http.Error(w, "Not user id", http.StatusInternalServerError)

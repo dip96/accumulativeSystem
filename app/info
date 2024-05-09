@@ -2,11 +2,11 @@
 ./cmd/accrual/accrual_linux_amd64 -a=localhost:8081 -d="postgresql://postgres:postgres@postgres/postgres?sslmode=disable"
 
 ./gophermarttest \
-    -gophermart-binary-path=app/cmd/gophermart/gophermart \
+    -gophermart-binary-path=../app/cmd/gophermart/gophermart \
     -gophermart-host=localhost \
     -gophermart-port=8080 \
     -gophermart-database-uri="postgresql://postgres:postgres@postgres/praktikum?sslmode=disable" \
-    -accrual-binary-path=app/cmd/accrual/accrual_linux_amd64 \
+    -accrual-binary-path=../app/cmd/accrual/accrual_linux_amd64 \
     -accrual-host=localhost \
     -accrual-port=8083 \
     -accrual-database-uri="postgresql://postgres:postgres@postgres/praktikum?sslmode=disable"
